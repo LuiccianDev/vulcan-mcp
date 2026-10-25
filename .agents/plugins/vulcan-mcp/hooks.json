@@ -1,0 +1,10 @@
+{
+  "vulcan-health-check": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "powershell -NoProfile -Command \"try { $t = New-Object System.Net.Sockets.TcpClient; $t.Connect('127.0.0.1', 9877); $t.Close(); Write-Output '[Vulcan Hook] Socket 127.0.0.1:9877 ONLINE' } catch { Write-Output '[Vulcan Hook] Socket 127.0.0.1:9877 OFFLINE (Abre Vulcan y corre vulcan_listener/server.py si requieres conexion en vivo)' }\""
+      }
+    ]
+  }
+}

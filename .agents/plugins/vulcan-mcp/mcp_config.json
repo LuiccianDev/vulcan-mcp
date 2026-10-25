@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "vulcan": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "C:\\Users\\DAVID\\Desktop\\WorksSpacesCoding\\vulcan-mcp",
+        "vulcan-mcp-server"
+      ]
+    }
+  }
+}
