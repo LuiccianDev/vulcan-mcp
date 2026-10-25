@@ -36,5 +36,6 @@ Refer to the master workspace rules in [AGENTS.md](./AGENTS.md).
 ## 6. Git Commits & Releases (git-release Plugin)
 - **No Silent Commits**: Always ask the user before executing `git commit`.
 - **Post-Task Prompt**: Present proposed Conventional Commit and await user approval.
+- **Feature Branches**: Protect `master` by isolating active feature development into dedicated branches (`feat/*`, `fix/*`).
 - **Autonomous Release**: Inspect Git history against previous tag to recommend SemVer bumps, and publish via `gh release create` upon approval.
 

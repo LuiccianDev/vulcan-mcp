@@ -38,3 +38,11 @@ These rules govern how AI assistants interact with Git, format commits, bump ver
   3. Publish release: `gh release create <tag> --title "..." --notes-file "..."`.
   4. Verify with `gh release view <tag>`.
 * **Zero Silent Releases**: As with commits, never execute `gh release create` without prior explicit confirmation of the version, title, and release notes.
+
+---
+
+## 5. Feature Branch & Main Protection Directives
+* **Protection of `master`**: When developing non-trivial features, mining tools, or substantial refactors, never commit directly to `master`.
+* **Interactive Branch Proposal**: When the user requests a new feature or customization, formulate a standardized branch name (`feat/*`, `fix/*`) and ask:
+  > *"To protect `master`, I will create branch `feat/<feature-name>`. Shall we proceed?"*
+* **Merge & Cleanup**: Only merge into `master` after verifying that automated tests pass (`pytest`) and all commits adhere to Conventional Commits. Clean up the branch after merging.

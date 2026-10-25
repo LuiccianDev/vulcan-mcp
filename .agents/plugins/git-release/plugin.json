@@ -6,6 +6,7 @@
   "suggestedPrompts": [
     "Review current changes and propose a Conventional Commit",
     "Group current changes into atomic commit batches",
+    "Create a new feature branch for upcoming task",
     "Prepare a new version release and update CHANGELOG.md",
     "Publish current milestone as GitHub release with gh CLI",
     "Check GitHub CLI authentication status and releases",
