@@ -77,8 +77,46 @@ Once changes are committed:
 
 ```powershell
 # Create annotated tag
-git tag -a v0.3.0 -m "Release v0.3.0: Diátaxis docs, English localization & Graphify integration"
+git tag -a v0.3.0 -m "Release v0.3.0: Diátaxis docs, Graphify, test harness, and git-release plugin"
 
 # Push commit and tags to GitHub
 git push origin master --tags
 ```
+
+---
+
+## 6. GitHub CLI (`gh`) Release Operations
+
+To publish an official Release on GitHub with formatted notes and assets without opening the browser:
+
+### Step 1: Pre-Flight Authentication Check
+Always verify GitHub CLI authentication before attempting to publish:
+```powershell
+gh auth status
+```
+If credentials have expired or need renewal:
+```powershell
+"github_pat_..." | gh auth login --with-token
+gh auth setup-git
+```
+
+### Step 2: Extract Scoped Release Notes
+Extract only the targeted version section from `CHANGELOG.md` (e.g. `[X.Y.Z]`) to a temporary scratch file or inline string to avoid dumping the entire changelog history into a single release description.
+
+### Step 3: Publish GitHub Release
+```powershell
+gh release create v0.3.0 `
+  --title "Vulcan MCP v0.3.0 - Diátaxis Docs, Graphify & Git-Release Plugin" `
+  --notes-file "path/to/release_notes.md"
+```
+
+### Step 4: Verification & Inspection
+Verify the published release directly from terminal:
+```powershell
+# View release details and notes
+gh release view v0.3.0
+
+# List all repository releases
+gh release list
+```
+

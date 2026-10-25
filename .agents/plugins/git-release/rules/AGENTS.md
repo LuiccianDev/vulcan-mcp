@@ -27,3 +27,14 @@ These rules govern how AI assistants interact with Git, format commits, bump ver
   git diff "$latestTag..HEAD" --stat
   ```
 * Based on the diff, the assistant determines whether changes warrant a `PATCH`, `MINOR`, or `MAJOR` bump, drafts the [`CHANGELOG.md`](../../../CHANGELOG.md) entry, and presents it for user confirmation.
+
+---
+
+## 4. GitHub CLI (`gh`) Cloud Release Protocol
+* **Pre-Flight Authentication**: Verify `gh auth status` before executing push or release actions.
+* **Release Creation**: Upon user confirmation of a release milestone:
+  1. Push commits and tags: `git push origin master --tags`.
+  2. Extract release notes corresponding to the target version from `CHANGELOG.md`.
+  3. Publish release: `gh release create <tag> --title "..." --notes-file "..."`.
+  4. Verify with `gh release view <tag>`.
+* **Zero Silent Releases**: As with commits, never execute `gh release create` without prior explicit confirmation of the version, title, and release notes.

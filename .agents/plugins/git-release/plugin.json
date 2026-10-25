@@ -6,6 +6,8 @@
   "suggestedPrompts": [
     "Review current changes and propose a Conventional Commit",
     "Prepare a new version release and update CHANGELOG.md",
+    "Publish current milestone as GitHub release with gh CLI",
+    "Check GitHub CLI authentication status and releases",
     "Check working tree status and version synchronization"
   ]
 }

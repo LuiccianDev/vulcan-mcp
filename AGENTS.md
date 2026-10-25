@@ -64,5 +64,5 @@ The repository maintains a persistent knowledge graph in `graphify-out/` to enab
 - **Strict Prohibition**: The assistant MUST NEVER execute `git commit` silently without asking the user.
 - **Post-Task Confirmation**: After verifying changes and automated tests, the assistant must always ask:
   *"Would you like me to commit these changes now (`git commit -m '...'`) or keep working?"*
-- **Autonomous Release Inspection**: When the user requests a release, inspect `git describe --tags --abbrev=0` and `git diff` against the last tag to recommend `PATCH`, `MINOR`, or `MAJOR` without asking the user to summarize what was done.
+- **Autonomous Release Inspection & Publishing**: When the user requests a release, inspect `git describe --tags --abbrev=0` and `git diff` against the last tag to recommend `PATCH`, `MINOR`, or `MAJOR` without asking the user to summarize what was done. Publish official releases to GitHub using `gh release create <tag> --title "..." --notes-file "..."` upon confirmation.
 
