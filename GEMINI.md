@@ -39,3 +39,7 @@ Refer to the master workspace rules in [AGENTS.md](./AGENTS.md).
 - **Feature Branches**: Protect `master` by isolating active feature development into dedicated branches (`feat/*`, `fix/*`).
 - **Autonomous Release**: Inspect Git history against previous tag to recommend SemVer bumps, and publish via `gh release create` upon approval.
 
+## 7. Continuation Cards & Post-Task Protocol
+- Present a Markdown table with 3 to 4 actionable continuation options at the end of every completed task.
+
+

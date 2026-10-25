@@ -67,3 +67,8 @@ The repository maintains a persistent knowledge graph in `graphify-out/` to enab
 - **Feature Branch Workflow & Main Protection**: Isolate new features, custom changes, and non-trivial refactors into dedicated feature branches (`feat/*`, `fix/*`). Protect `master` by merging only after automated tests pass.
 - **Autonomous Release Inspection & Publishing**: When the user requests a release, inspect `git describe --tags --abbrev=0` and `git diff` against the last tag to recommend `PATCH`, `MINOR`, or `MAJOR` without asking the user to summarize what was done. Publish official releases to GitHub using `gh release create <tag> --title "..." --notes-file "..."` upon confirmation.
 
+## 8. Continuation Cards & Post-Task Protocol
+- **Actionable Next Steps**: At the end of every completed turn, task, or verified commit, the assistant must formulate a structured Markdown table of 3 to 4 **Continuation Cards**.
+- **Content**: Offer clear, distinct pathways (e.g. creating a feature branch, running a Vulcan mining audit, triggering a test suite, or preparing a release).
+
+

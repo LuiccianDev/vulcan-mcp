@@ -46,3 +46,10 @@ These rules govern how AI assistants interact with Git, format commits, bump ver
 * **Interactive Branch Proposal**: When the user requests a new feature or customization, formulate a standardized branch name (`feat/*`, `fix/*`) and ask:
   > *"To protect `master`, I will create branch `feat/<feature-name>`. Shall we proceed?"*
 * **Merge & Cleanup**: Only merge into `master` after verifying that automated tests pass (`pytest`) and all commits adhere to Conventional Commits. Clean up the branch after merging.
+
+---
+
+## 6. GitHub Security & Keyring Storage Protocol
+* **No Plaintext Secrets in Workspace**: Never store GitHub tokens in committed `.env` files.
+* **Windows Keyring Priority**: Always authenticate via `gh auth login --with-token` which stores secrets encrypted in the native Windows Credential Manager (`keyring`).
+* **Pre-Flight Check**: Always verify credentials via `gh auth status` before executing network operations.
