@@ -29,7 +29,8 @@
       <a href="#-practical--simple-examples">Practical Examples</a> •
       <a href="./docs/TUTORIAL_FIRST_STEPS.md">Tutorial</a> •
       <a href="./docs/HOW_TO_GUIDES.md">How-To Guides</a> •
-      <a href="./docs">Documentation</a>
+      <a href="./docs">Documentation</a> •
+      <a href="./CONTRIBUTING.md">Contributing</a>
     </b>
   </p>
 
@@ -463,3 +464,14 @@ uv run --no-sync pytest tests/test_vulcan_mcp.py tests/test_mcp_tools.py tests/t
 | `src/vulcan_mcp/protocol.py` | 39 | **87%** | ✅ Optimal |
 | `src/vulcan_mcp/client.py` | 30 | **79%** | ✅ Optimal |
 | **Total `vulcan_mcp` Package** | **124** | **88%** | **✅ 22/22 Tests Passing** |
+
+---
+
+## 🤝 Contributing
+
+Contributions, bug reports, and suggestions are warmly welcomed! Please read our [**Contributing Guide (CONTRIBUTING.md)**](./CONTRIBUTING.md) to learn about:
+* Setting up the local development environment with `uv`.
+* Feature branch workflows (`feat/*`, `fix/*`) to keep `master` stable.
+* Strict Python 3.5.2 compatibility in `plugin/` (no f-strings).
+* Conventional Commits and submitting Pull Requests with GitHub CLI (`gh`).
+
