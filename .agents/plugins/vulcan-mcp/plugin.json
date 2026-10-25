@@ -1,11 +1,11 @@
 {
   "name": "vulcan-mcp",
   "displayName": "Maptek Vulcan MCP",
-  "description": "Integración con Maptek Vulcan 12 Desktop para consultas mineras, modelos de bloques, sondajes y capturas 3D.",
-  "version": "1.0.0",
+  "description": "Integration with Maptek Vulcan 12 Desktop for geological queries, block models, drillholes, and 3D screenshots.",
+  "version": "0.3.0",
   "suggestedPrompts": [
-    "Consulta el estado y modelos de bloques del proyecto minero en Vulcan",
-    "Busca los intervalos de mayor ley de cobre en la base de datos de sondajes",
-    "Toma una captura de pantalla del viewport 3D de Envisage"
+    "Check status and inventory of block models in the active Vulcan project",
+    "Find the highest grade copper intervals in the drillhole database",
+    "Take a screenshot of the active Envisage 3D viewport"
   ]
 }

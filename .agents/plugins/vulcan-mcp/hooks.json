@@ -3,7 +3,7 @@
     "PreInvocation": [
       {
         "type": "command",
-        "command": "powershell -NoProfile -Command \"try { $t = New-Object System.Net.Sockets.TcpClient; $t.Connect('127.0.0.1', 9877); $t.Close(); Write-Output '[Vulcan Hook] Socket 127.0.0.1:9877 ONLINE' } catch { Write-Output '[Vulcan Hook] Socket 127.0.0.1:9877 OFFLINE (Abre Vulcan y corre plugin/server.py si requieres conexion en vivo)' }\""
+        "command": "powershell -NoProfile -Command \"try { $t = New-Object System.Net.Sockets.TcpClient; $t.Connect('127.0.0.1', 9877); $t.Close(); Write-Output '[Vulcan Hook] Socket 127.0.0.1:9877 ONLINE' } catch { Write-Output '[Vulcan Hook] Socket 127.0.0.1:9877 OFFLINE (Open Vulcan and run plugin/server.py if live connection is required)' }\""
       }
     ]
   }

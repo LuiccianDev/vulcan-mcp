@@ -1,0 +1,12 @@
+{
+  "name": "graphify",
+  "displayName": "Graphify Knowledge Graph",
+  "version": "1.1.0",
+  "description": "Deterministic knowledge graph integration for Vulcan MCP architecture mapping, dependency tracing, and token-efficient codebase navigation.",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Query the knowledge graph to trace data flow between FastMCP tools and Vulcan handlers",
+    "Identify architectural hubs (God Nodes) and communities in Vulcan MCP",
+    "Update the project knowledge graph after modifying Vulcan domain handlers"
+  ]
+}

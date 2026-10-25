@@ -5,6 +5,7 @@ Can be executed either directly:
 or via pytest:
     pytest tests/test_live.py -v -s
 """
+
 import sys
 import time
 from pathlib import Path
@@ -79,18 +80,26 @@ def test_level3_block_model():
     mx = orig[0] + (ext[0] + ext[1]) / 2.0
     my = orig[1] + (ext[2] + ext[3]) / 2.0
     mz = orig[2] + (ext[4] + ext[5]) / 2.0
-    q = client.send_command("block_model", {"action": "query_xyz", "model": model, "x": mx, "y": my, "z": mz})
+    q = client.send_command(
+        "block_model", {"action": "query_xyz", "model": model, "x": mx, "y": my, "z": mz}
+    )
     assert q["found"] is True, f"Block not found at ({mx}, {my}, {mz}): {q}"
-    print(f"[L3.2 PASS] Block @ ({mx:.1f}, {my:.1f}, {mz:.1f}) -> cobre_iw2={q['block'].get('cobre_iw2')}")
+    print(
+        f"[L3.2 PASS] Block @ ({mx:.1f}, {my:.1f}, {mz:.1f}) -> cobre_iw2={q['block'].get('cobre_iw2')}"
+    )
 
-    grade_var = next((v for v in ("cobre_iw2", "cobre_iwd2", "cobre") if v in var_names), var_names[0])
+    grade_var = next(
+        (v for v in ("cobre_iw2", "cobre_iwd2", "cobre") if v in var_names), var_names[0]
+    )
     stats = client.send_command(
         "block_model",
         {"action": "stats", "model": model, "variable": grade_var, "cutoff": 0.4, "density": 2.7},
         timeout=120.0,
     )
     assert stats["summary"]["blocks"] > 0
-    print(f"[L3.3 PASS] Stats for '{grade_var}': {stats['summary']} | Above cutoff: {stats.get('above_cutoff')}")
+    print(
+        f"[L3.3 PASS] Stats for '{grade_var}': {stats['summary']} | Above cutoff: {stats.get('above_cutoff')}"
+    )
 
 
 def test_level4_triangulation():
@@ -99,12 +108,16 @@ def test_level4_triangulation():
 
     info = client.send_command("triangulation", {"action": "info", "name": name})
     assert info["nodes"] > 0 and info["faces"] > 0
-    print(f"\n[L4.1 PASS] Triangulation '{name}': {info['nodes']} nodes, {info['faces']} faces, closed={info['closed']}")
+    print(
+        f"\n[L4.1 PASS] Triangulation '{name}': {info['nodes']} nodes, {info['faces']} faces, closed={info['closed']}"
+    )
 
     ext = info["extent"]
     cx = (ext[0][0] + ext[1][0]) / 2.0
     cy = (ext[0][1] + ext[1][1]) / 2.0
-    elev = client.send_command("triangulation", {"action": "elevation", "name": name, "points": [[cx, cy]]})
+    elev = client.send_command(
+        "triangulation", {"action": "elevation", "name": name, "points": [[cx, cy]]}
+    )
     assert len(elev["elevations"]) == 1
     print(f"[L4.2 PASS] Elevation @ ({cx:.1f}, {cy:.1f}) -> Z = {elev['elevations'][0]['z']:.2f}")
 
@@ -115,21 +128,36 @@ def test_level5_drillholes():
 
     schema = client.send_command("drillholes", {"action": "schema", "db": db})
     assert schema["holes"] > 0
-    print(f"\n[L5.1 PASS] Drillhole DB '{db}': {schema['holes']} holes, tables={list(schema['tables'].keys())}")
+    print(
+        f"\n[L5.1 PASS] Drillhole DB '{db}': {schema['holes']} holes, tables={list(schema['tables'].keys())}"
+    )
 
     holes = client.send_command("drillholes", {"action": "holes", "db": db, "limit": 5})
     first_hole = holes["items"][0]
-    hole_data = client.send_command("drillholes", {"action": "hole", "db": db, "hole": first_hole, "limit": 5})
+    hole_data = client.send_command(
+        "drillholes", {"action": "hole", "db": db, "hole": first_hole, "limit": 5}
+    )
     assert len(hole_data["tables"]) >= 1
-    print(f"[L5.2 PASS] Hole '{first_hole}' tables fetched: { {k: len(v) for k, v in hole_data['tables'].items()} }")
+    print(
+        f"[L5.2 PASS] Hole '{first_hole}' tables fetched: { {k: len(v) for k, v in hole_data['tables'].items()} }"
+    )
 
     if "LEYES" in schema["tables"] and "CUT" in schema["tables"]["LEYES"]:
         hg = client.send_command(
             "drillholes",
-            {"action": "high_grade", "db": db, "table": "LEYES", "field": "CUT", "min_value": 1.0, "limit": 5},
+            {
+                "action": "high_grade",
+                "db": db,
+                "table": "LEYES",
+                "field": "CUT",
+                "min_value": 1.0,
+                "limit": 5,
+            },
             timeout=120.0,
         )
-        print(f"[L5.3 PASS] High-grade intervals (>=1.0% Cu): {hg['matches']} matches, top 3={hg['top'][:3]}")
+        print(
+            f"[L5.3 PASS] High-grade intervals (>=1.0% Cu): {hg['matches']} matches, top 3={hg['top'][:3]}"
+        )
 
     disp = client.send_command(
         "drillholes",
@@ -150,12 +178,20 @@ def test_level6_design_cad():
 
     layers = client.send_command("design", {"action": "list_layers", "dgd": dgd})["layers"]
     assert len(layers) >= 1
-    print(f"\n[L6.1 PASS] DGD '{dgd}' layers: {[l['name'] for l in layers]}")
+    print(f"\n[L6.1 PASS] DGD '{dgd}' layers: {[layer_obj['name'] for layer_obj in layers]}")
 
-    target_layer = "SONDAJE_LEYES" if any(l["name"] == "SONDAJE_LEYES" for l in layers) else layers[0]["name"]
-    linfo = client.send_command("design", {"action": "layer_info", "dgd": dgd, "layer": target_layer, "limit": 3})
+    target_layer = (
+        "SONDAJE_LEYES"
+        if any(layer_obj["name"] == "SONDAJE_LEYES" for layer_obj in layers)
+        else layers[0]["name"]
+    )
+    linfo = client.send_command(
+        "design", {"action": "layer_info", "dgd": dgd, "layer": target_layer, "limit": 3}
+    )
     assert linfo["total"] >= 0
-    print(f"[L6.2 PASS] Layer '{target_layer}': {linfo['total']} objects, sample={linfo['items'][:2]}")
+    print(
+        f"[L6.2 PASS] Layer '{target_layer}': {linfo['total']} objects, sample={linfo['items'][:2]}"
+    )
 
 
 def test_level7_legends():
@@ -164,7 +200,9 @@ def test_level7_legends():
 
     inspected = client.send_command("legend", {"action": "inspect", "scd": scd})
     assert "DRILL_COLOUR" in inspected["schemes"]
-    print(f"\n[L7 PASS] Legend '{scd}' schemes: { {k: list(v.keys()) for k, v in inspected['schemes'].items()} }")
+    print(
+        f"\n[L7 PASS] Legend '{scd}' schemes: { {k: list(v.keys()) for k, v in inspected['schemes'].items()} }"
+    )
 
 
 def test_level8_screenshot():
@@ -172,13 +210,17 @@ def test_level8_screenshot():
     assert snap["mime_type"] == "image/jpeg"
     assert snap["width"] <= 800
     assert snap["bytes"] > 500
-    print(f"\n[L8 PASS] Screenshot captured: {snap['width']}x{snap['height']} JPEG ({snap['bytes'] / 1024:.1f} KB)")
+    print(
+        f"\n[L8 PASS] Screenshot captured: {snap['width']}x{snap['height']} JPEG ({snap['bytes'] / 1024:.1f} KB)"
+    )
 
 
 def test_level9_execute_code():
     res = client.send_command(
         "execute_code",
-        {"code": "import maptek.vulcan as v\nresult = {'has_bm': hasattr(v, 'block_model'), 'dir': project_dir}"},
+        {
+            "code": "import maptek.vulcan as v\nresult = {'has_bm': hasattr(v, 'block_model'), 'dir': project_dir}"
+        },
     )
     assert res["executed"] is True
     assert res["result"]["has_bm"] is True

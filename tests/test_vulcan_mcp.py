@@ -1,6 +1,6 @@
 """Automated unit and structural tests for vulcan-mcp."""
+
 import ast
-import os
 import sys
 from pathlib import Path
 
@@ -8,10 +8,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "plugin"))
 
-import server as listener_server  # noqa: E402
-import wire  # noqa: E402
-from handlers.common import COMMANDS  # noqa: E402
 import pytest  # noqa: E402
+import server as listener_server  # noqa: E402
+from handlers.common import COMMANDS  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -35,7 +34,16 @@ def test_python35_compatibility_no_fstrings():
 
 
 def test_all_domains_registered():
-    expected = {"system", "block_model", "triangulation", "design", "drillholes", "legend", "canvas", "execute_code"}
+    expected = {
+        "system",
+        "block_model",
+        "triangulation",
+        "design",
+        "drillholes",
+        "legend",
+        "canvas",
+        "execute_code",
+    }
     assert set(COMMANDS.keys()) == expected
 
 
@@ -137,7 +145,10 @@ def test_legend_parse_and_update(tmp_path, monkeypatch):
 
 def test_execute_code_handler():
     res = listener_server.dispatch(
-        {"type": "execute_code", "params": {"code": "x = 21 * 2\nprint('hello')\nresult = {'answer': x}"}}
+        {
+            "type": "execute_code",
+            "params": {"code": "x = 21 * 2\nprint('hello')\nresult = {'answer': x}"},
+        }
     )
     assert res["status"] == "success"
     assert res["result"]["executed"] is True
@@ -186,3 +197,26 @@ def test_drillhole_desurvey_and_colour():
     assert abs(pt[2] - 650.0) < 1e-6
     assert drillholes._grade_to_vulcan_colour(1.5) == 1
     assert drillholes._grade_to_vulcan_colour(0.1) == 5
+
+
+def test_version_synchronization():
+    """Ensure pyproject.toml, vulcan_mcp.__version__, and plugin.json stay synchronized."""
+    import json
+    import tomllib
+
+    import vulcan_mcp
+
+    pyproject_path = ROOT / "pyproject.toml"
+    with open(pyproject_path, "rb") as f:
+        pyproject_data = tomllib.load(f)
+    pyproject_version = pyproject_data["project"]["version"]
+
+    plugin_json_path = ROOT / ".agents/plugins/vulcan-mcp/plugin.json"
+    with open(plugin_json_path, "r", encoding="utf-8") as f:
+        plugin_data = json.load(f)
+    plugin_version = plugin_data["version"]
+
+    pkg_version = vulcan_mcp.__version__
+
+    assert pkg_version == pyproject_version == plugin_version
+    assert pkg_version == "0.3.0"

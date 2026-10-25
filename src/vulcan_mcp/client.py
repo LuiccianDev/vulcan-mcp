@@ -1,4 +1,5 @@
 """TCP Socket client for communicating with the Maptek Vulcan listener."""
+
 import socket
 
 from vulcan_mcp.protocol import (
@@ -54,4 +55,5 @@ class VulcanMCPClient:
 
         if resp.get("status") == "error":
             raise RuntimeError(resp.get("message", "Unknown Vulcan error"))
-        return resp.get("result", {})
+        result = resp.get("result", {})
+        return dict(result) if isinstance(result, dict) else {}

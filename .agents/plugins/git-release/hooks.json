@@ -1,0 +1,10 @@
+{
+  "git-status-check": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "powershell -NoProfile -Command \"$s = git status --porcelain; if ($s) { Write-Output '[Git Hook] Working tree has uncommitted modifications' } else { Write-Output '[Git Hook] Working tree is clean' }\""
+      }
+    ]
+  }
+}

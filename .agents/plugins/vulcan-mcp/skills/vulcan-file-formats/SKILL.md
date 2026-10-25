@@ -1,54 +1,54 @@
 ---
 name: vulcan-file-formats
-description: Referencia oficial y concisa de los formatos de archivo de Maptek Vulcan (.bmf, .00t, .dgd.isis, .dhd.isis, .scd, .grid) y que herramienta MCP usar para cada uno.
+description: Concise technical reference for Maptek Vulcan file formats (.bmf, .00t, .dgd.isis, .dhd.isis, .scd, .grid) and which MCP tools operate on each.
 ---
 
-# Formatos de Archivo de Maptek Vulcan
+# Maptek Vulcan File Formats
 
-Guía rápida basada en la documentación oficial de **Maptek Vulcan Help** para identificar y operar cada tipo de archivo del proyecto minero.
+Quick reference guide based on official **Maptek Vulcan Help** documentation to identify and interact with all mining project file types.
 
 ---
 
-## 1. Mapa Rápido de Extensiones y Herramientas MCP
+## 1. Quick Extension & MCP Tool Mapping
 
-| Extensión | Nombre Oficial | Contenido Principal | Herramienta MCP |
+| Extension | Official Name | Primary Content | MCP Tool |
 | :--- | :--- | :--- | :--- |
-| **`.bmf`** | Block Model File | Modelo de bloques 3D (regular o sub-bloqueado), leyes, densidad, litología, economía. | `vulcan_block_model` |
-| **`.00t`** (`.tri`, `.sft`, `.srt`) | Triangulation | Superficies 3D (topografía, fallas) y sólidos cerrados (cuerpos mineralizados, labores, pits). | `vulcan_triangulation` |
-| **`.dgd.isis`** | Design Database | Base de datos espacial CAD 3D (post-v7.0): capas (`layers`), polilíneas, polígonos, puntos y textos. | `vulcan_design` |
-| **`.dhd.isis`** | Drillhole ISIS DB | Base de datos relacional ISIS de sondajes: collares, desviaciones (`survey`), leyes e intervalos. | `vulcan_drillholes` |
-| **`.scd`** | Scheme / Legend File | Esquemas de colores y leyendas de Envisage (mapeo de rangos de ley o códigos de roca a colores). | `vulcan_legend` |
-| **`.dgd.isix` / `.dhd.isix`** | ISIS Index File | Índice binario de acceso rápido para bases `.isis`. **No editar ni borrar manualmente.** | *(Interno del SDK)* |
-| **`.wrk`** | Work File | Archivo temporal de recuperación durante edición activa en Envisage. | *(Interno de Vulcan)* |
-| **`.grid` / `.sfg`** | Grid Surface | Mallas regulares 2D/2.5D de elevación o interpolación estructural. | `vulcan_execute_code` (`v.grid`) |
+| **`.bmf`** | Block Model File | 3D block model (regular or sub-blocked), grades, density, lithology, economics. | `vulcan_block_model` |
+| **`.00t`** (`.tri`, `.sft`, `.srt`) | Triangulation | 3D surfaces (topography, faults) and closed solids (orebodies, stopes, pits). | `vulcan_triangulation` |
+| **`.dgd.isis`** | Design Database | 3D CAD spatial database: layers, polylines, polygons, points, annotations. | `vulcan_design` |
+| **`.dhd.isis`** | Drillhole ISIS DB | Relational ISIS drilling database: collars, surveys, assays, lithology intervals. | `vulcan_drillholes` |
+| **`.scd`** | Scheme / Legend File | Envisage color schemes and legends (grade ranges, rock code colors). | `vulcan_legend` |
+| **`.dgd.isix` / `.dhd.isix`** | ISIS Index File | Binary fast-access index for `.isis` databases. **Do not delete or edit manually.** | *(Internal SDK)* |
+| **`.wrk`** | Work File | Temporary recovery file generated during interactive Envisage sessions. | *(Internal Vulcan)* |
+| **`.grid` / `.sfg`** | Grid Surface | 2D/2.5D regular grid surfaces for structural or elevation modeling. | `vulcan_execute_code` (`v.grid`) |
 
 ---
 
-## 2. Reglas por Tipo de Archivo
+## 2. Rules by File Type
 
-### Modelos de Bloques (`.bmf`)
-* Contienen una definición geométrica (origen $X_0, Y_0, Z_0$, orientación/rotación y esquemas de tamaño de bloque) y variables por bloque.
-* Las variables pueden ser **numéricas** (`float`/`double`, ej. `CUT`, `DENS`, `AU`) o **alfanuméricas** (`string`, ej. `ROCK`, `ZONE`).
-* Siempre abre en modo lectura (`"r"`) para consultas o cubicaciones (`action="info"`, `action="query_xyz"`, `action="stats"`).
+### Block Models (`.bmf`)
+* Defined by geometric extents (origin $X_0, Y_0, Z_0$, orientation/rotation, and schema block sizes) and block attributes.
+* Variables can be **numeric** (`float`/`double`, e.g., `CUT`, `DENS`, `AU`) or **alphanumeric** (`string`, e.g., `ROCK`, `ZONE`).
+* Open in read mode (`"r"`) for audits or resource queries (`action="info"`, `action="query_xyz"`, `action="stats"`).
 
-### Triangulaciones (`.00t`)
-* Compuestas por **nodos** (vértices $[X, Y, Z]$) y **caras** (triángulos de 3 índices $[i_1, i_2, i_3]$).
-* **Superficie abierta (`closed: false`)**: Topografía (`topo*.00t`), nivel freático o fallas. Útil para proyectar cotas $Z$ (`action="elevation"`).
-* **Sólido cerrado (`closed: true`)**: Orebody, tajo o caserón. Permite calcular volumen real (`action="info"` -> `volume`).
+### Triangulations (`.00t`)
+* Composed of **nodes** (3D vertices $[X, Y, Z]$) and **faces** (triangle index triplets $[i_1, i_2, i_3]$).
+* **Open surface (`closed: false`)**: Topography (`topo*.00t`), water table, or fault plane. Ideal for sampling $Z$ elevations (`action="elevation"`).
+* **Closed solid (`closed: true`)**: Orebody, pit shell, or underground stope. Enables volume estimation (`action="info"` -> `volume`).
 
-### Bases de Diseño CAD (`.dgd.isis`)
-* Organizadas en **Capas (`Layers`)**, donde cada capa agrupa objetos vectoriales (`polyline`).
-* Una capa típica como `SONDAJE_LEYES` o `TOPO` contiene polilíneas 3D con nombre, color de paleta Vulcan y coordenadas.
-* Usa `action="list_layers"` antes de cargar (`load_layer`) o inspeccionar (`layer_info`).
+### CAD Design Databases (`.dgd.isis`)
+* Organized into **Layers**, each grouping 3D vector objects (`polyline`).
+* Typical layers like `ASSAYS` or `TOPO` contain 3D polylines with names, Vulcan palette colors, and vertex coordinates.
+* Use `action="list_layers"` prior to loading (`load_layer`) or inspecting (`layer_info`).
 
-### Bases de Sondajes ISIS (`.dhd.isis`)
-* Estructura jerárquica indexada por clave de taladro (`Key` = `HOLE_ID`).
-* Tablas típicas en proyectos en español/inglés:
-  * **Collares**: `COLLARES` / `COLLAR` / `LOCATION` ($X, Y, Z$, longitud total).
-  * **Desviaciones**: `DIRECCIONES` / `SURVEY` (`FROM`/`DEPTH`, `AZIMUTH`, `BUZ`/`DIP`).
-  * **Ensayes**: `LEYES` / `ASSAY` (`FROM`, `TO`, `CUT`, `AU`, `AG`).
-  * **Geología**: `LITOLOGIA` / `LITHOLOGY` (`FROM`, `TO`, `RX`, `ALT`).
+### ISIS Drillhole Databases (`.dhd.isis`)
+* Hierarchical structure indexed by drillhole key (`Key` = `HOLE_ID`).
+* Typical tables in mining projects (supports bilingual schemas):
+  * **Collars**: `COLLARS` / `COLLARES` / `LOCATION` ($X, Y, Z$, total depth).
+  * **Surveys**: `SURVEY` / `DIRECCIONES` (`FROM`/`DEPTH`, `AZIMUTH`, `DIP`/`BUZ`).
+  * **Assays**: `ASSAYS` / `LEYES` (`FROM`, `TO`, `CUT`, `AU`, `AG`).
+  * **Geology**: `LITHOLOGY` / `LITOLOGIA` (`FROM`, `TO`, `RX`, `ALT`).
 
-### Leyendas y Esquemas de Color (`.scd`)
-* Archivos de texto estructurados por bloques de esquema (ej. `DRILL_COLOUR`, `BLOCK_COLOUR`).
-* Al actualizar una leyenda con `vulcan_legend` (`action="update"`), se genera automáticamente un respaldo `.scd.bak` restaurable con `action="restore"`.
+### Legends and Color Schemes (`.scd`)
+* Plain text files structured into scheme blocks (e.g., `DRILL_COLOUR`, `BLOCK_COLOUR`).
+* When updating a legend with `vulcan_legend` (`action="update"`), a backup `.scd.bak` is automatically created and can be restored via `action="restore"`.

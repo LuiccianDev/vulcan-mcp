@@ -1,35 +1,35 @@
-# Referencia Completa de Herramientas MCP (Master Tools Catalog)
+# Complete MCP Tools Reference (Master Tools Catalog)
 
-Documentación técnica detallada de las **9 herramientas maestras** expuestas por **Vulcan MCP** hacia clientes compatibles con el *Model Context Protocol* (Google Antigravity, Claude Desktop, Cursor, VS Code).
+Detailed technical reference for the **9 Master Compound Tools** exposed by **Vulcan MCP** to Model Context Protocol clients (Google Antigravity, Claude Desktop, Cursor, VS Code).
 
 ---
 
-## Resumen Ejecutivo de Herramientas
+## Executive Summary of Tools
 
-| # | Herramienta MCP | Dominio Minero | Acciones Disponibles (`action=`) | Timeout |
+| # | MCP Tool | Mining Domain | Available Actions (`action=`) | Timeout |
 | :-: | :--- | :--- | :--- | :---: |
-| 1 | **`vulcan_system`** | Sistema e Inventario | `ping`, `project_info`, `capabilities` | `30s` |
-| 2 | **`vulcan_block_model`** | Modelos de Bloques (`.bmf`) | `list`, `info`, `query_xyz`, `stats` | `120s` |
-| 3 | **`vulcan_triangulation`** | Superficies y Sólidos (`.00t`/`.tri`) | `list`, `info`, `elevation`, `point_inside`, `load`, `unload` | `30s` |
-| 4 | **`vulcan_design`** | Diseño CAD 3D (`.dgd.isis`) | `list_dbs`, `list_layers`, `layer_info`, `load_layer`, `clear_temp`, `create_polyline` | `30s` |
-| 5 | **`vulcan_drillholes`** | Sondajes ISIS (`.dhd.isis`) | `list_dbs`, `schema`, `holes`, `hole`, `high_grade`, `display`, `clear_display` | `120s` |
-| 6 | **`vulcan_legend`** | Leyendas Envisage (`.scd`) | `list`, `inspect`, `update`, `restore` | `30s` |
-| 7 | **`vulcan_screenshot`** | Captura Viewport 3D | *(Directa: `max_width`, `quality`)* | `30s` |
-| 8 | **`vulcan_canvas`** | Interfaz y Macros | `macro`, `report` | `30s` |
-| 9 | **`vulcan_execute_code`** | Scripting PyVulcan | *(Directa: `code`)* | `120s` |
+| 1 | **`vulcan_system`** | System & Inventory | `ping`, `project_info`, `capabilities` | `30s` |
+| 2 | **`vulcan_block_model`** | Block Models (`.bmf`) | `list`, `info`, `query_xyz`, `stats` | `120s` |
+| 3 | **`vulcan_triangulation`** | Surfaces & Solids (`.00t`/`.tri`) | `list`, `info`, `elevation`, `point_inside`, `load`, `unload` | `30s` |
+| 4 | **`vulcan_design`** | 3D CAD Design (`.dgd.isis`) | `list_dbs`, `list_layers`, `layer_info`, `load_layer`, `clear_temp`, `create_polyline` | `30s` |
+| 5 | **`vulcan_drillholes`** | ISIS Drillholes (`.dhd.isis`) | `list_dbs`, `schema`, `holes`, `hole`, `high_grade`, `display`, `clear_display` | `120s` |
+| 6 | **`vulcan_legend`** | Envisage Legends (`.scd`) | `list`, `inspect`, `update`, `restore` | `30s` |
+| 7 | **`vulcan_screenshot`** | 3D Viewport Capture | *(Direct: `max_width`, `quality`)* | `30s` |
+| 8 | **`vulcan_canvas`** | Interface & Macros | `macro`, `report` | `30s` |
+| 9 | **`vulcan_execute_code`** | PyVulcan Scripting | *(Direct: `code`)* | `120s` |
 
 ---
 
-## 1. `vulcan_system` — Conectividad, Inventario y Capacidades
+## 1. `vulcan_system` — Connectivity, Inventory & Capabilities
 
-Verifica la salud del listener en Vulcan (`127.0.0.1:9877`) e inventaría todos los archivos mineros del directorio de trabajo activo.
+Verifies the status of the Vulcan listener socket (`127.0.0.1:9877`) and inventories all mining files in the active project directory.
 
-### Parámetros
-| Parámetro | Tipo | Requerido | Por Defecto | Descripción |
+### Parameters
+| Parameter | Type | Required | Default | Description |
 | :--- | :--- | :---: | :---: | :--- |
-| `action` | `"ping" \| "project_info" \| "capabilities"` | Sí | `"project_info"` | Operación de sistema a ejecutar. |
+| `action` | `"ping" \| "project_info" \| "capabilities"` | Yes | `"project_info"` | System operation to execute. |
 
-### Ejemplos de Respuesta
+### Response Examples
 * **`action="ping"`**:
   ```json
   {
@@ -54,23 +54,23 @@ Verifica la salud del listener en Vulcan (`127.0.0.1:9877`) e inventaría todos 
 
 ---
 
-## 2. `vulcan_block_model` — Modelos de Bloques (`.bmf`)
+## 2. `vulcan_block_model` — Block Models (`.bmf`)
 
-Inspección geométrica, consulta espacial $(X, Y, Z)$ y cubicación estadística ponderada por volumen sobre archivos `.bmf`.
+Geometric inspection, spatial queries $(X, Y, Z)$, and volume-weighted statistical resource estimation over `.bmf` files.
 
-### Parámetros
-| Parámetro | Tipo | Requerido en | Descripción |
+### Parameters
+| Parameter | Type | Required In | Description |
 | :--- | :--- | :--- | :--- |
-| `action` | `"list" \| "info" \| "query_xyz" \| "stats"` | Todas | Acción a ejecutar sobre modelos de bloques. |
-| `model` | `str` | `info`, `query_xyz`, `stats` | Nombre del archivo `.bmf` (ej. `"bmw_ml_30_30_30.bmf"`). |
-| `x`, `y`, `z` | `float` | `query_xyz` | Coordenadas de mundo $(X, Y, Z)$ a consultar. |
-| `variables` | `list[str]` | Opcional en `query_xyz` | Lista de variables a leer (si se omite, lee todas). |
-| `variable` | `str` | `stats` | Variable numérica a cubicar (ej. `"CUT"`). |
-| `cutoff` | `float` | Opcional en `stats` | Ley de corte para calcular estadísticas sobre `variable >= cutoff`. |
-| `density` | `float` | Opcional en `stats` | Densidad media ($t/m^3$) para reportar tonelaje (`tonnes = volume * density`). |
-| `select` | `str` | Opcional en `stats` | Expresión de filtro de Vulcan para seleccionar bloques específicos. |
+| `action` | `"list" \| "info" \| "query_xyz" \| "stats"` | All | Action to execute on block models. |
+| `model` | `str` | `info`, `query_xyz`, `stats` | Name of the `.bmf` file (e.g., `"bmw_ml_30_30_30.bmf"`). |
+| `x`, `y`, `z` | `float` | `query_xyz` | World coordinates $(X, Y, Z)$ to sample. |
+| `variables` | `list[str]` | Optional in `query_xyz` | List of variables to read (if omitted, reads all). |
+| `variable` | `str` | `stats` | Numeric variable to estimate (e.g., `"CUT"`). |
+| `cutoff` | `float` | Optional in `stats` | Cutoff grade to filter `variable >= cutoff`. |
+| `density` | `float` | Optional in `stats` | Mean density ($t/m^3$) to calculate tonnage (`tonnes = volume * density`). |
+| `select` | `str` | Optional in `stats` | Vulcan selection filter expression. |
 
-### Ejemplo de Respuesta (`action="stats"`)
+### Response Example (`action="stats"`)
 ```json
 {
   "variable": "CUT",
@@ -100,21 +100,21 @@ Inspección geométrica, consulta espacial $(X, Y, Z)$ y cubicación estadístic
 
 ---
 
-## 3. `vulcan_triangulation` — Superficies y Sólidos 3D (`.00t` / `.tri`)
+## 3. `vulcan_triangulation` — 3D Surfaces & Solids (`.00t` / `.tri`)
 
-Análisis geométrico, validación topológica, interpolación de cotas $Z$, evaluación de puntos dentro de sólidos y visualización 3D.
+Geometric analysis, topological closure validation, $Z$ elevation interpolation, point-in-solid testing, and 3D display.
 
-### Parámetros
-| Parámetro | Tipo | Requerido en | Descripción |
+### Parameters
+| Parameter | Type | Required In | Description |
 | :--- | :--- | :--- | :--- |
-| `action` | `"list" \| "info" \| "elevation" \| "point_inside" \| "load" \| "unload"` | Todas | Acción a ejecutar. |
-| `name` | `str` | Todas excepto `list` | Nombre del archivo `.00t` o `.tri` (ej. `"topografia_1.00t"`). |
-| `points` | `list[list[float]]` | `elevation`, `point_inside` | En `elevation`: `[[x, y], ...]`. En `point_inside`: `[[x, y, z], ...]`. |
+| `action` | `"list" \| "info" \| "elevation" \| "point_inside" \| "load" \| "unload"` | All | Triangulation operation to execute. |
+| `name` | `str` | All except `list` | Name of the `.00t` or `.tri` file (e.g., `"topography_1.00t"`). |
+| `points` | `list[list[float]]` | `elevation`, `point_inside` | In `elevation`: `[[x, y], ...]`. In `point_inside`: `[[x, y, z], ...]`. |
 
-### Ejemplo de Respuesta (`action="info"`)
+### Response Example (`action="info"`)
 ```json
 {
-  "name": "topografia_1.00t",
+  "name": "topography_1.00t",
   "nodes": 2201,
   "faces": 4224,
   "extent": [[474025.37, 4479261.5, 546.97], [475294.53, 4480530.66, 673.17]],
@@ -128,81 +128,81 @@ Análisis geométrico, validación topológica, interpolación de cotas $Z$, eva
 
 ---
 
-## 4. `vulcan_design` — Bases de Diseño CAD 3D (`.dgd.isis`)
+## 4. `vulcan_design` — 3D CAD Design Databases (`.dgd.isis`)
 
-Exploración, visualización y creación de capas y polilíneas/polígonos 3D en bases de diseño `.dgd.isis`.
+Exploration, planar area computation, and creation of 3D polylines/polygons in `.dgd.isis` design databases.
 
-### Parámetros
-| Parámetro | Tipo | Requerido en | Descripción |
+### Parameters
+| Parameter | Type | Required In | Description |
 | :--- | :--- | :--- | :--- |
-| `action` | `"list_dbs" \| "list_layers" \| "layer_info" \| "load_layer" \| "clear_temp" \| "create_polyline"` | Todas | Acción CAD a ejecutar. |
-| `dgd` | `str` | `list_layers`, `layer_info`, `load_layer`, `create_polyline` | Archivo `.dgd.isis` (ej. `"baisusxier.dgd.isis"`). |
-| `layer` | `str` | `layer_info`, `load_layer`, `create_polyline` | Nombre de la capa (ej. `"SONDAJE_LEYES"`, `"TOPO"`). |
-| `points` | `list[list[float]]` | `create_polyline` | Lista de vértices 3D `[[x, y, z], ...]` (mínimo 2 puntos). |
-| `closed` | `bool` | Opcional en `create_polyline` | Si es `True`, cierra la polilínea como polígono. |
-| `colour` | `int` | Opcional en `create_polyline` | Índice de color de la paleta de Vulcan (`1`=Rojo, `2`=Verde, etc.). |
-| `name` | `str` | Opcional en `create_polyline` | Nombre identificador del objeto CAD. |
-| `use_temp_objects` | `bool` | Opcional en `load_layer` | Por defecto `True` (renderiza vía `vg.temp_object` sin bloquear edición). |
-| `limit`, `offset` | `int` | Opcional en `layer_info` | Paginación de objetos (por defecto `limit=20`, `offset=0`). |
+| `action` | `"list_dbs" \| "list_layers" \| "layer_info" \| "load_layer" \| "clear_temp" \| "create_polyline"` | All | CAD action to execute. |
+| `dgd` | `str` | `list_layers`, `layer_info`, `load_layer`, `create_polyline` | `.dgd.isis` database file. |
+| `layer` | `str` | `layer_info`, `load_layer`, `create_polyline` | Name of the design layer (e.g., `"PIT_BENCH_100"`). |
+| `points` | `list[list[float]]` | `create_polyline` | List of 3D vertices `[[x, y, z], ...]` (minimum 2 points). |
+| `closed` | `bool` | Optional in `create_polyline` | If `True`, closes polyline as a polygon. |
+| `colour` | `int` | Optional in `create_polyline` | Vulcan palette color index (`1`=Red, `2`=Green, etc.). |
+| `name` | `str` | Optional in `create_polyline` | Identifying name for the CAD object. |
+| `use_temp_objects` | `bool` | Optional in `load_layer` | Defaults to `True` (renders via `vg.temp_object` without locking). |
+| `limit`, `offset` | `int` | Optional in `layer_info` | Object pagination (default `limit=20`, `offset=0`). |
 
 ---
 
-## 5. `vulcan_drillholes` — Sondajes ISIS (`.dhd.isis`) y Desurvey 3D
+## 5. `vulcan_drillholes` — ISIS Drillholes (`.dhd.isis`) & 3D Desurvey
 
-Consultas relacionales sobre bases de perforación ISIS, detección de interceptos de alta ley y visualización 3D coloreada por ley.
+Relational queries on drilling databases, high-grade intercept discovery, and grade-colored 3D desurveyed display.
 
-### Parámetros
-| Parámetro | Tipo | Requerido en | Descripción |
+### Parameters
+| Parameter | Type | Required In | Description |
 | :--- | :--- | :--- | :--- |
-| `action` | `"list_dbs" \| "schema" \| "holes" \| "hole" \| "high_grade" \| "display" \| "clear_display"` | Todas | Acción sobre sondajes. |
-| `db` | `str` | `schema`, `holes`, `hole`, `high_grade`, `display` | Archivo `.dhd.isis` (ej. `"bmw_sondajes.dhd.isis"`). |
-| `hole` | `str` | `hole` | Identificador de un sondaje (ej. `"SOP25"`). |
-| `holes` | `list[str]` | Opcional en `display` | Lista de taladros específicos a renderizar. |
-| `table` | `str` | `high_grade` (opcional en `hole`, `display`) | Tabla ISIS (ej. `"LEYES"`, `"COLLARES"`, `"DIRECCIONES"`). |
-| `field` | `str` | `high_grade` (opcional en `display`) | Campo numérico de ley (ej. `"CUT"`). |
-| `min_value` | `float` | `high_grade` | Valor mínimo de corte para filtrar intervalos de alta ley. |
-| `limit` | `int` | Opcional | Límite de registros, taladros o top interceptos. |
-| `max_segments` | `int` | Opcional en `display` | Límite de segmentos 3D en Envisage (por defecto `300`). |
-| `save_layer` | `str` | Opcional en `display` | Guarda las trazas 3D generadas en una capa del archivo `.dgd.isis`. |
+| `action` | `"list_dbs" \| "schema" \| "holes" \| "hole" \| "high_grade" \| "display" \| "clear_display"` | All | Action on drillhole database. |
+| `db` | `str` | `schema`, `holes`, `hole`, `high_grade`, `display` | `.dhd.isis` database file. |
+| `hole` | `str` | `hole` | Single drillhole ID (e.g., `"DH001"`). |
+| `holes` | `list[str]` | Optional in `display` | Specific drillhole IDs to render. |
+| `table` | `str` | `high_grade` (optional in `hole`, `display`) | ISIS table (e.g., `"ASSAYS"`, `"COLLARS"`, `"SURVEY"`). |
+| `field` | `str` | `high_grade` (optional in `display`) | Numeric grade field (e.g., `"CU"`). |
+| `min_value` | `float` | `high_grade` | Minimum cutoff value to filter high-grade intervals. |
+| `limit` | `int` | Optional | Maximum number of records, holes, or top intercepts. |
+| `max_segments` | `int` | Optional in `display` | 3D segment limit in Envisage (default `300`). |
+| `save_layer` | `str` | Optional in `display` | Save generated 3D traces into a `.dgd.isis` CAD layer. |
 
 ---
 
-## 6. `vulcan_legend` — Leyendas de Colores Envisage (`.scd`)
+## 6. `vulcan_legend` — Envisage Color Legends (`.scd`)
 
-Inspección y actualización de esquemas de colores `.scd` con copia de seguridad automática `.scd.bak`.
+Inspection and modification of `.scd` color schemes with automated `.scd.bak` backup.
 
-### Parámetros
-| Parámetro | Tipo | Requerido en | Descripción |
+### Parameters
+| Parameter | Type | Required In | Description |
 | :--- | :--- | :--- | :--- |
-| `action` | `"list" \| "inspect" \| "update" \| "restore"` | Todas | Acción sobre leyendas. |
-| `scd` | `str` | `inspect`, `update`, `restore` | Archivo `.scd` (ej. `"bai.scd"`). |
-| `scheme` | `str` | `update` | Esquema dentro del `.scd` (ej. `"DRILL_COLOUR"`, `"BLOCK_COLOUR"`). |
-| `table` | `str` | `update` | Tabla dentro del esquema (ej. `"COBRE"`, `"LEYES"`). |
-| `preset` | `"high_contrast_mining" \| "classic_blue_to_red" \| "traffic_light" \| "hot_metal"` | `update` (o `colours`) | Paleta minera predefinida. |
-| `colours` | `list[str]` | `update` (o `preset`) | Lista personalizada de códigos de color de Vulcan. |
+| `action` | `"list" \| "inspect" \| "update" \| "restore"` | All | Action on legend file. |
+| `scd` | `str` | `inspect`, `update`, `restore` | `.scd` file name. |
+| `scheme` | `str` | `update` | Scheme inside `.scd` (e.g., `"DRILL_COLOUR"`, `"BLOCK_COLOUR"`). |
+| `table` | `str` | `update` | Table inside scheme (e.g., `"COPPER"`, `"ASSAYS"`). |
+| `preset` | `"high_contrast_mining" \| "classic_blue_to_red" \| "traffic_light" \| "hot_metal"` | `update` (or `colours`) | Predefined mining color palette. |
+| `colours` | `list[str]` | `update` (or `preset`) | Custom list of Vulcan color codes. |
 
 ---
 
-## 7. `vulcan_screenshot` — Captura Visual 3D Optimizada
+## 7. `vulcan_screenshot` — Optimized 3D Viewport Capture
 
-Localiza automáticamente la ventana visible de Maptek Vulcan mediante `win32gui`, captura el lienzo 3D, lo redimensiona manteniendo proporción y lo comprime en JPEG.
+Locates the active Maptek Vulcan window via `win32gui`, captures the 3D canvas, resizes maintaining aspect ratio, and compresses to JPEG.
 
-* **`max_width`** (`int`, por defecto `800`): Ancho máximo en píxeles.
-* **`quality`** (`int`, por defecto `70`): Calidad de compresión JPEG (`1-95`).
-* **Retorno**: Objeto `ImageContent` (`mimeType="image/jpeg"`) listo para visión multimodal del LLM.
-
----
-
-## 8. `vulcan_canvas` — Macros y Consola de Reportes
-
-* **`action="macro"`** (`macro: str`): Ejecuta un comando de macro en Envisage Workbench (`vg.workbench_macro`).
-* **`action="report"`** (`text: str`): Imprime texto en la ventana de reportes de Maptek Vulcan (`vg.print_message`).
+* **`max_width`** (`int`, default `800`): Maximum width in pixels.
+* **`quality`** (`int`, default `70`): JPEG compression quality (`1-95`).
+* **Return**: `ImageContent` object (`mimeType="image/jpeg"`) for LLM multimodal vision.
 
 ---
 
-## 9. `vulcan_execute_code` — Scripting Directo en PyVulcan
+## 8. `vulcan_canvas` — Macros & Report Console
 
-Permite ejecutar cualquier rutina avanzada sobre el intérprete Python 3.5.2 embebido en Vulcan.
-* **Variables pre-inyectadas**: `vulcan` (`maptek.vulcan`), `vulcan_gui` (`maptek.vulcan_gui`), `project_dir` (ruta del proyecto).
-* **Retorno de datos**: Asigna cualquier diccionario, lista o escalar a la variable `result`.
-* **Restricción importante**: Escribir código compatible con **Python 3.5** (usar `.format()` en lugar de *f-strings*).
+* **`action="macro"`** (`macro: str`): Executes an Envisage Workbench macro command (`vg.workbench_macro`).
+* **`action="report"`** (`text: str`): Prints a message to Vulcan's report window (`vg.print_message`).
+
+---
+
+## 9. `vulcan_execute_code` — Direct PyVulcan Scripting
+
+Executes Python routines directly inside Vulcan's embedded Python 3.5.2 interpreter.
+* **Pre-injected variables**: `vulcan` (`maptek.vulcan`), `vulcan_gui` (`maptek.vulcan_gui`), `project_dir` (active project path).
+* **Return data**: Assign any dictionary, list, or scalar to the `result` variable.
+* **Important constraint**: Write **Python 3.5 compatible code** (use `.format()` instead of *f-strings*).

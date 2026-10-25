@@ -1,86 +1,86 @@
 ---
 name: vulcan-tools-catalog
-description: Catalogo completo y guia rapida de las 9 herramientas maestras de Vulcan MCP (acciones, parametros obligatorios/opcionales y valores de retorno).
+description: Complete catalog and quick guide for the 9 Vulcan MCP Master Tools (actions, required/optional parameters, and return schemas).
 ---
 
-# Catálogo de las 9 Herramientas Maestras (Vulcan MCP)
+# The 9 Master Tools Catalog (Vulcan MCP)
 
-Usa esta referencia para seleccionar la herramienta exacta y los parámetros requeridos en cada operación sobre Maptek Vulcan 12 Desktop.
-
----
-
-## 1. `vulcan_system` — Conectividad e Inventario del Proyecto
-* **Acciones (`action=`)**:
-  * `"ping"`: Verifica conexión TCP en vivo con Vulcan (`connected`, `python`, `project_dir`).
-  * `"project_info"`: Lista todos los archivos mineros del directorio activo (`block_models`, `triangulations`, `design_dbs`, `drillhole_dbs`, `legends`).
-  * `"capabilities"`: Verifica librerías disponibles dentro del Python de Vulcan (`pandas`, `PIL`, `win32gui`).
+Use this reference to select the exact tool and parameters for every operation on Maptek Vulcan 12 Desktop.
 
 ---
 
-## 2. `vulcan_block_model` — Modelos de Bloques (`.bmf`)
-* **Acciones (`action=`)**:
-  * `"list"`: Lista archivos `.bmf`.
-  * `"info"`: Requiere `model`. Devuelve `n_blocks`, `origin`, `orientation`, `world_extent`, `schemas` y lista de `variables` (tipo, valor por defecto y descripción).
-  * `"query_xyz"`: Requiere `model`, `x`, `y`, `z` (opcional `variables`). Devuelve leyes y dimensiones del bloque en esa coordenada espacial.
-  * `"stats"`: Requiere `model`, `variable` (opcionales `cutoff`, `density`, `select`). Calcula bloques válidos, mínimo, máximo, media aritmética, **media ponderada por volumen**, volumen ($m^3$) y **tonelaje** total y sobre ley de corte.
+## 1. `vulcan_system` — Connectivity & Project Inventory
+* **Actions (`action=`)**:
+  * `"ping"`: Check live TCP connection to Vulcan (`connected`, `python`, `project_dir`).
+  * `"project_info"`: Inventory all mining assets in the active directory (`block_models`, `triangulations`, `design_dbs`, `drillhole_dbs`, `legends`).
+  * `"capabilities"`: Check available Python modules in Vulcan's environment (`pandas`, `PIL`, `win32gui`).
 
 ---
 
-## 3. `vulcan_triangulation` — Superficies y Sólidos 3D (`.00t` / `.tri`)
-* **Acciones (`action=`)**:
-  * `"list"`: Lista archivos `.00t` y `.tri`.
-  * `"info"`: Requiere `name`. Devuelve `nodes`, `faces`, `extent`, `closed`, `consistent`, `crossing`, `ok`, `centroid` $[X, Y, Z]$ y `volume` (si es cerrado).
-  * `"elevation"`: Requiere `name` y `points=[[x, y], ...]`. Devuelve la cota $Z$ interpolada sobre la superficie.
-  * `"point_inside"`: Requiere `name` y `points=[[x, y, z], ...]`. Devuelve `inside: True/False` para cada coordenada 3D respecto al sólido.
-  * `"load"` / `"unload"`: Requiere `name`. Carga o descarga la triangulación en el viewport 3D de Envisage.
+## 2. `vulcan_block_model` — Block Models (`.bmf`)
+* **Actions (`action=`)**:
+  * `"list"`: List `.bmf` files.
+  * `"info"`: Requires `model`. Returns `n_blocks`, `origin`, `orientation`, `world_extent`, `schemas`, and `variables` list (type, default value, description).
+  * `"query_xyz"`: Requires `model`, `x`, `y`, `z` (optional `variables`). Returns grades and dimensions of the block at that coordinate.
+  * `"stats"`: Requires `model`, `variable` (optional `cutoff`, `density`, `select`). Calculates block counts, min, max, arithmetic mean, **volume-weighted mean**, volume ($m^3$), and total and cutoff **tonnage**.
 
 ---
 
-## 4. `vulcan_design` — Bases de Diseño CAD 3D (`.dgd.isis`)
-* **Acciones (`action=`)**:
-  * `"list_dbs"`: Lista bases de diseño `.dgd.isis`.
-  * `"list_layers"`: Requiere `dgd`. Lista todas las capas y su conteo de objetos.
-  * `"layer_info"`: Requiere `dgd`, `layer` (opcionales `limit`, `offset`). Devuelve objetos con `name`, `points`, `length`, `closed`, `planar_area` ($m^2$) y `centroid` $[X, Y, Z]$.
-  * `"load_layer"`: Requiere `dgd`, `layer` (opcionales `use_temp_objects=True`, `load_method`). Renderiza la capa en la ventana 3D.
-  * `"clear_temp"`: Limpia los objetos CAD temporales del viewport 3D.
-  * `"create_polyline"`: Requiere `dgd`, `layer`, `points=[[x, y, z], ...]` (opcionales `closed`, `colour`, `name`). Crea y guarda una polilínea o polígono 3D.
+## 3. `vulcan_triangulation` — 3D Surfaces & Solids (`.00t` / `.tri`)
+* **Actions (`action=`)**:
+  * `"list"`: List `.00t` and `.tri` files.
+  * `"info"`: Requires `name`. Returns `nodes`, `faces`, `extent`, `closed`, `consistent`, `crossing`, `ok`, `centroid` $[X, Y, Z]$, and `volume` (if closed).
+  * `"elevation"`: Requires `name` and `points=[[x, y], ...]`. Returns interpolated $Z$ elevations on the surface.
+  * `"point_inside"`: Requires `name` and `points=[[x, y, z], ...]`. Returns `inside: True/False` for each 3D point.
+  * `"load"` / `"unload"`: Requires `name`. Loads or unloads the triangulation in Envisage's 3D viewport.
 
 ---
 
-## 5. `vulcan_drillholes` — Bases de Sondajes ISIS (`.dhd.isis`)
-* **Acciones (`action=`)**:
-  * `"list_dbs"`: Lista bases de sondajes `.dhd.isis`.
-  * `"schema"`: Requiere `db`. Devuelve conteo de taladros (`holes`), tablas (`COLLARES`, `DIRECCIONES`, `LEYES`, `LITOLOGIA`) y campos.
-  * `"holes"`: Requiere `db` (opcionales `limit`, `offset`). Lista paginada de `HOLE_ID`.
-  * `"hole"`: Requiere `db`, `hole` (opcionales `table`, `limit`). Extrae los registros del taladro.
-  * `"high_grade"`: Requiere `db`, `table`, `field`, `min_value` (opcional `limit`). Escanea toda la base buscando los mejores interceptos minerales.
-  * `"display"`: Requiere `db` (opcionales `holes`, `table="LEYES"`, `field="CUT"`, `limit=5`, `max_segments=300`, `save_layer`). Calcula el *desurvey* 3D y pinta los sondajes coloreados por ley en Envisage.
-  * `"clear_display"`: Limpia los sondajes temporales de la pantalla 3D.
+## 4. `vulcan_design` — 3D CAD Design Databases (`.dgd.isis`)
+* **Actions (`action=`)**:
+  * `"list_dbs"`: List `.dgd.isis` design databases.
+  * `"list_layers"`: Requires `dgd`. Lists all layers and their object counts.
+  * `"layer_info"`: Requires `dgd`, `layer` (optional `limit`, `offset`). Returns objects with `name`, `points`, `length`, `closed`, `planar_area` ($m^2$), and `centroid` $[X, Y, Z]$.
+  * `"load_layer"`: Requires `dgd`, `layer` (optional `use_temp_objects=True`, `load_method`). Renders the layer in the 3D window.
+  * `"clear_temp"`: Clears temporary CAD objects from the 3D viewport.
+  * `"create_polyline"`: Requires `dgd`, `layer`, `points=[[x, y, z], ...]` (optional `closed`, `colour`, `name`). Creates and saves a 3D polyline or polygon.
 
 ---
 
-## 6. `vulcan_legend` — Leyendas de Colores Envisage (`.scd`)
-* **Acciones (`action=`)**:
-  * `"list"`: Lista archivos `.scd` y paletas predefinidas (`high_contrast_mining`, `classic_blue_to_red`, `traffic_light`, `hot_metal`).
-  * `"inspect"`: Requiere `scd`. Muestra esquemas (`BLOCK_COLOUR`, `DRILL_COLOUR`) y sus rangos.
-  * `"update"`: Requiere `scd`, `scheme`, `table` y `preset` (o `colours`). Actualiza colores creando respaldo automático `.scd.bak`.
-  * `"restore"`: Requiere `scd`. Restaura el archivo desde su `.scd.bak`.
+## 5. `vulcan_drillholes` — ISIS Drillhole Databases (`.dhd.isis`)
+* **Actions (`action=`)**:
+  * `"list_dbs"`: List `.dhd.isis` drillhole databases.
+  * `"schema"`: Requires `db`. Returns drillhole counts (`holes`), tables (`COLLARS`, `SURVEY`, `ASSAYS`, `LITHOLOGY`), and fields.
+  * `"holes"`: Requires `db` (optional `limit`, `offset`). Paginated list of `HOLE_ID` keys.
+  * `"hole"`: Requires `db`, `hole` (optional `table`, `limit`). Extracts records for a single drillhole.
+  * `"high_grade"`: Requires `db`, `table`, `field`, `min_value` (optional `limit`). Scans the database for top mineral intercepts.
+  * `"display"`: Requires `db` (optional `holes`, `table="ASSAYS"`, `field="CUT"`, `limit=5`, `max_segments=300`, `save_layer`). Computes 3D desurvey and renders grade-colored intervals in Envisage.
+  * `"clear_display"`: Clears temporary drillhole traces from the 3D display.
 
 ---
 
-## 7. `vulcan_screenshot` — Captura Visual 3D Optimizada
-* **Parámetros**: `max_width=800`, `quality=70`.
-* **Retorno**: Imagen JPEG comprimida de la ventana 3D de Maptek Vulcan para inspección visual con bajo consumo de tokens.
+## 6. `vulcan_legend` — Envisage Color Legends (`.scd`)
+* **Actions (`action=`)**:
+  * `"list"`: Lists `.scd` files and presets (`high_contrast_mining`, `classic_blue_to_red`, `traffic_light`, `hot_metal`).
+  * `"inspect"`: Requires `scd`. Displays schemes (`BLOCK_COLOUR`, `DRILL_COLOUR`) and intervals.
+  * `"update"`: Requires `scd`, `scheme`, `table`, and `preset` (or `colours`). Updates colors and creates automatic `.scd.bak` backup.
+  * `"restore"`: Requires `scd`. Restores the file from `.scd.bak`.
 
 ---
 
-## 8. `vulcan_canvas` — Macros y Consola de Reportes
-* **Acciones (`action=`)**:
-  * `"macro"`: Requiere `macro`. Ejecuta un comando o macro de Envisage Workbench.
-  * `"report"`: Requiere `text`. Imprime un mensaje en la ventana de reportes de Vulcan.
+## 7. `vulcan_screenshot` — Optimized 3D Viewport Capture
+* **Parameters**: `max_width=800`, `quality=70`.
+* **Return**: Compressed JPEG image of Maptek Vulcan's 3D window for low token-overhead visual inspection.
 
 ---
 
-## 9. `vulcan_execute_code` — Scripting Directo en PyVulcan
-* **Parámetros**: `code` (string de código compatible con Python 3.5; asignar resultado a `result = ...`).
-* **Retorno**: `executed`, `result`, `stdout`, `stderr`. Tiene `vulcan`, `vulcan_gui` y `project_dir` precargados.
+## 8. `vulcan_canvas` — Macros & Report Window
+* **Actions (`action=`)**:
+  * `"macro"`: Requires `macro`. Executes an Envisage Workbench macro command.
+  * `"report"`: Requires `text`. Prints a message into Vulcan's report window.
+
+---
+
+## 9. `vulcan_execute_code` — Direct PyVulcan Scripting
+* **Parameters**: `code` (Python 3.5 compatible code string; assign output to `result = ...`).
+* **Return**: `executed`, `result`, `stdout`, `stderr`. Has `vulcan`, `vulcan_gui`, and `project_dir` pre-injected.

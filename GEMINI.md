@@ -1,23 +1,40 @@
-# Pautas de Desarrollo y Operación: Vulcan MCP
+# Development and Operational Guidelines: Vulcan MCP
 
-Consulta las reglas maestras completas del workspace en [AGENTS.md](./AGENTS.md).
+Refer to the master workspace rules in [AGENTS.md](./AGENTS.md).
 
-## 1. Gestión de Entornos y Dependencias (uv)
-- **Cero gestión manual de venvs**: Nunca crear ni activar entornos virtuales manualmente con `python -m venv` o `activate`.
-- **Instalación/Sincronización**: Usar `uv sync`.
-- **Ejecución de herramientas y scripts**: Usar siempre `uv run <comando>` (ej: `uv run --no-sync pytest tests/test_vulcan_mcp.py -v`). Usar `--no-sync` en Windows si el servidor MCP está corriendo para evitar error de archivo bloqueado.
+## 1. Environment & Dependency Management (uv)
+- **Zero manual virtualenv management**: Never create or activate virtual environments manually with `python -m venv` or `activate`.
+- **Install/Sync**: Use `uv sync`.
+- **Tool execution**: Always run commands through `uv run <command>` (e.g., `uv run --no-sync pytest tests/test_vulcan_mcp.py -v`). Use `--no-sync` on Windows if the MCP server is active to prevent file-lock issues.
 
-## 2. Conectividad en Vivo con Maptek Vulcan 12
-- **Socket TCP local**: El plugin interno de Vulcan escucha en `127.0.0.1:9877` corriendo desde `plugin/server.py`.
-- **Sandbox en Windows**: Para comunicarse con el proceso de escritorio de Vulcan, ejecutar los comandos de prueba con `BypassSandbox: true` para permitir acceso al puerto de red local.
-- **Diálogos Modales**: Si un comando se detiene por timeout, verificar si la interfaz de Vulcan Desktop tiene una ventana emergente abierta (estas bloquean el hilo principal de Python de Vulcan).
-- **Orden de Inicio**: Paso 1: Levantar siempre primero `plugin/server.py` en Vulcan. Paso 2: Conectar el cliente de IA.
+## 2. Live Connectivity with Maptek Vulcan 12
+- **Local TCP Socket**: The internal Vulcan plugin listens on `127.0.0.1:9877` via `plugin/server.py`.
+- **Windows Sandbox**: To communicate with Vulcan Desktop, execute test commands with `BypassSandbox: true` to access the local network port.
+- **Modal Dialogs**: If an operation times out, check if Maptek Vulcan Desktop has an active popup dialog (these suspend Vulcan's main Python thread).
+- **Start Order**: Step 1: Always launch `plugin/server.py` in Vulcan first. Step 2: Connect the AI client.
 
-## 3. Manejo de Datos Mineros y SDK de Vulcan
-- **Bases de datos ISIS en español**: Los campos de inclinación/survey admiten `BUZ` y `BUZAMIENTO`; profundidad admite `FROM` y `DESDE`.
-- **Límite de visualización 3D**: Limitar siempre la cantidad de segmentos gráficos temporales generados en el viewport de Envisage (`vg.temp_object`) a un máximo prudente (ej. <= 300) para no sobrecargar el hilo gráfico de Vulcan.
-- **Hot-Reload**: Los handlers pueden recargarse en caliente en el intérprete de Vulcan usando `execute_code` con `importlib.reload(modulo)` sin reiniciar el servidor en Vulcan.
+## 3. Mining Data & Vulcan SDK
+- **Bilingual ISIS Databases**: Support both Spanish and English survey fields (`BUZ`/`DIP`, `BUZAMIENTO`, `FROM`/`DESDE`, `TO`/`HASTA`, `COLLARES`/`COLLARS`, `LEYES`/`ASSAYS`).
+- **3D Graphics Limit**: Always restrict temporary graphics segments (`vg.temp_object`) in Envisage to a safe limit ($\le 300$) to avoid graphics lag.
+- **Hot-Reload**: Handlers can be hot-reloaded dynamically using `execute_code` with `importlib.reload(module)` without restarting Vulcan.
 
-## 4. Pruebas y Verificación
-- **Pruebas unitarias**: `uv run --no-sync pytest tests/test_vulcan_mcp.py -v`
-- **Pruebas de integración en vivo**: `uv run --no-sync pytest tests/test_live.py -v` (con Vulcan y listener activos).
+## 4. Testing & Verification (3 Layers)
+- **Layer 1 (Unit & AST)**: `uv run --no-sync pytest tests/test_vulcan_mcp.py -v` (offline, validates Python 3.5 in plugin/)
+- **Layer 2 (Mock Harness & Eval)**: `uv run --no-sync pytest tests/test_mcp_tools.py tests/test_agent_eval.py -v` (offline, emulates Vulcan socket)
+- **Layer 3 (Live Integration)**: `uv run --no-sync pytest tests/test_live.py -v` (with active Vulcan Desktop and listener)
+- **Quality Checks**:
+  - `uv run --no-sync ruff check .`
+  - `uv run --no-sync ruff format --check .`
+  - `uv run --no-sync mypy src/`
+  - `uv run --no-sync pytest tests/test_vulcan_mcp.py tests/test_mcp_tools.py tests/test_agent_eval.py -v --cov=src/vulcan_mcp`
+
+## 5. Graphify Knowledge Graph & Token-Saving Protocol
+- **Location**: `graphify-out/` (`graph.json`, `wiki/index.md`, `GRAPH_REPORT.md`).
+- **When to Use**: Query Graphify MCP tools (`query_graph`, `shortest_path`, `god_nodes`) or consult `graphify-out/wiki/index.md` before broad recursive searches.
+- **Maintenance**: Update deterministically via `uvx --from graphifyy graphify update .` after modifying code in `src/vulcan_mcp/` or `plugin/handlers/`.
+
+## 6. Git Commits & Releases (git-release Plugin)
+- **No Silent Commits**: Always ask the user before executing `git commit`.
+- **Post-Task Prompt**: Present proposed Conventional Commit and await user approval.
+- **Autonomous Release**: Inspect Git history against previous tag to recommend SemVer bumps.
+

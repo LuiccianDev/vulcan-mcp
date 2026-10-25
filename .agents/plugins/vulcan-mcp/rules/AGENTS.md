@@ -1,8 +1,15 @@
-# Reglas del Plugin Vulcan MCP
+# Vulcan MCP Plugin Rules
 
-## Interacción con Maptek Vulcan 12 Desktop
-- **Gestión con `uv`**: Todas las invocaciones de Python y tests del servidor deben realizarse a través de `uv run`.
-- **Modales en Vulcan**: Si una llamada a una herramienta MCP se detiene por timeout, verificar si la interfaz de Maptek Vulcan Desktop muestra un cuadro de diálogo modal emergente (estos bloquean el hilo principal de Python de Vulcan hasta que el usuario hace clic en OK).
-- **Límite de visualización 3D**: Al invocar `vulcan_drillholes` con la acción `display`, restringir la cantidad de elementos o usar `limit` moderado (<= 300 segmentos) para evitar congelar el hilo gráfico OpenGL de Envisage.
-- **Sondajes en español**: En bases de datos ISIS (`.dhd.isis`), las tablas y columnas comúnmente están en español (`BUZ`, `BUZAMIENTO`, `FROM`, `DESDE`, `LEYES`, `COLLARES`, `DIRECCIONES`).
-- **Capturas de pantalla 3D**: Utilizar `vulcan_screenshot` para validar visualmente la escena 3D en Envisage tras cargar capas CAD, triangulaciones o modelos de bloques.
+## Interaction with Maptek Vulcan 12 Desktop
+- **Managed with `uv`**: All Python invocations, server commands, and tests must run via `uv run`.
+- **Vulcan Modal Dialogs**: If an MCP tool call halts or times out, check whether Maptek Vulcan Desktop has an open modal popup window (these freeze Vulcan's main Python thread until the user clicks OK or Cancel).
+- **3D Graphics Limit**: When calling `vulcan_drillholes` with the `display` action, restrict the number of rendered items or use a moderate `limit` ($\le 300$ segments) to avoid freezing Envisage's OpenGL thread.
+- **Bilingual Drillholes**: In ISIS databases (`.dhd.isis`), support both English and Spanish table and column names (`COLLARS/COLLARES`, `ASSAYS/LEYES`, `DIP/BUZ/BUZAMIENTO`, `FROM/DESDE`, `TO/HASTA`).
+- **3D Screenshots**: Use `vulcan_screenshot` to visually inspect and validate Envisage's 3D scene after loading CAD layers, triangulations, or block models.
+
+## Knowledge Graph & Architectural Navigation
+- **Graph-First Navigation**: Always consult `graphify-out/wiki/index.md` or Graphify MCP tools (`query_graph`, `shortest_path`, `god_nodes`) before reading large source files across `src/vulcan_mcp/` and `plugin/handlers/`.
+- **Zero-Token Maintenance**: Whenever domain handlers in `plugin/handlers/` or core server files in `src/vulcan_mcp/` are modified, keep the graph fresh:
+  ```powershell
+  uvx --from graphifyy graphify update .
+  ```

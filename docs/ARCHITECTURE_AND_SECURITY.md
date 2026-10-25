@@ -1,35 +1,35 @@
-# Arquitectura Interna, Protocolo TCP y Seguridad (Vulcan MCP)
+# Internal Architecture, TCP Protocol & Security (Vulcan MCP)
 
-Este documento describe el diseño interno de **Vulcan MCP**, el protocolo de transporte binario entre el servidor MCP y Maptek Vulcan 12 Desktop, la gestión de memoria gráfica SWIG/OpenGL y el modelo de autenticación por token.
+This document describes the internal engineering design of **Vulcan MCP**, the binary framing transport protocol between the MCP server and Maptek Vulcan 12 Desktop, SWIG/OpenGL memory management, and the token-based security architecture.
 
 ---
 
-## 1. ¿Por qué una Arquitectura en Dos Procesos?
+## 1. Why a Two-Process Architecture?
 
-Maptek Vulcan 12 Desktop incorpora un intérprete interno basado en **Python 3.5.2** compilado junto a las librerías nativas C++/SWIG (`maptek.vulcan` y `maptek.vulcan_gui`). Por otro lado, el SDK oficial del **Model Context Protocol (`mcp` / `FastMCP`)** y `Pydantic v2` requieren **Python 3.11+**.
+Maptek Vulcan 12 Desktop embeds an internal Python runtime based on **Python 3.5.2**, compiled alongside native C++/SWIG bindings (`maptek.vulcan` and `maptek.vulcan_gui`). Conversely, the official **Model Context Protocol SDK (`mcp` / `FastMCP`)** and `Pydantic v2` require **Python 3.11+**.
 
-Para resolver esta incompatibilidad sin modificar la instalación de Maptek Vulcan:
+To resolve this incompatibility without altering the core Maptek Vulcan installation:
 
 ```mermaid
 flowchart TB
-    subgraph IDE["Cliente MCP (Antigravity / Claude / Cursor / VS Code)"]
-        A["Agente IA / LLM"]
+    subgraph IDE["MCP Client (Antigravity / Claude / Cursor / VS Code)"]
+        A["AI Agent / LLM"]
     end
 
-    subgraph EXT["Proceso Externo (Python 3.12+ gestionado por uv)"]
+    subgraph EXT["External Process (Python 3.11+ managed by uv)"]
         B["FastMCP Server (src/vulcan_mcp/server.py)"]
         C["VulcanMCPClient (src/vulcan_mcp/client.py)"]
-        D["Protocolo & Config .env (src/vulcan_mcp/protocol.py)"]
+        D["Protocol & Environment Config (src/vulcan_mcp/protocol.py)"]
     end
 
-    subgraph VUL["Proceso Maptek Vulcan 12 Desktop (Python 3.5.2 Embebido)"]
+    subgraph VUL["Maptek Vulcan 12 Desktop Process (Embedded Python 3.5.2)"]
         E["Socket Listener (plugin/server.py)"]
-        F["Framing & Serializador SWIG (plugin/wire.py)"]
-        G["Handlers por Dominio (plugin/handlers/*.py)"]
-        H["SDK C++/SWIG (maptek.vulcan & maptek.vulcan_gui)"]
+        F["Framing & SWIG Serializer (plugin/wire.py)"]
+        G["Domain Handlers (plugin/handlers/*.py)"]
+        H["C++/SWIG SDK (maptek.vulcan & maptek.vulcan_gui)"]
     end
 
-    A <-->|"JSON-RPC sobre Stdio"| B
+    A <-->|"JSON-RPC over Stdio"| B
     B --> C
     C --> D
     D <-->|"TCP 127.0.0.1:9877 (uint32 + JSON + Token)"| E
@@ -40,17 +40,17 @@ flowchart TB
 
 ---
 
-## 2. Protocolo de Transporte Binario (`wire.py` & `protocol.py`)
+## 2. Binary Transport Protocol (`wire.py` & `protocol.py`)
 
-El canal TCP entre `src/vulcan_mcp/protocol.py` y `plugin/wire.py` utiliza **Length-Prefixed JSON Framing**:
+The TCP channel between `src/vulcan_mcp/protocol.py` and `plugin/wire.py` uses **Length-Prefixed JSON Framing**:
 
-1. **Cabecera (4 bytes)**: Entero sin signo de 32 bits en orden de red *big-endian* (`struct.Struct("!I")`) que indica la longitud exacta en bytes del payload.
-2. **Payload ($N$ bytes)**: Documento JSON codificado en UTF-8 (tamaño máximo permitido: `64 MB`).
-3. **Serialización de Tipos SWIG (`wire._default`)**:
-   * Las llamadas a `maptek.vulcan` devuelven contenedores C++ envueltos por SWIG (`double_list`, `string_list`, iteradores y escalares C).
-   * El serializador convierte automáticamente estos objetos a `float`, `list` o `str` nativos de JSON antes de transmitirlos por el socket.
+1. **Header (4 bytes)**: Unsigned 32-bit integer in big-endian network byte order (`struct.Struct("!I")`) indicating exact payload length in bytes.
+2. **Payload ($N$ bytes)**: UTF-8 encoded JSON string (maximum allowed payload: `64 MB`).
+3. **SWIG Type Serialization (`wire._default`)**:
+   * Calls to `maptek.vulcan` return C++ SWIG wrappers (`double_list`, `string_list`, custom iterators, and C scalars).
+   * The custom serializer automatically downcasts these types to native JSON `float`, `list`, or `str` before socket transmission.
 
-### Estructura del Sobre de Petición (Request Envelope)
+### Request Envelope Structure
 ```json
 {
   "type": "block_model",
@@ -65,65 +65,65 @@ El canal TCP entre `src/vulcan_mcp/protocol.py` y `plugin/wire.py` utiliza **Len
 }
 ```
 
-### Estructura del Sobre de Respuesta (Response Envelope)
-* **Éxito**:
+### Response Envelope Structure
+* **Success**:
   ```json
   {
     "status": "success",
     "result": { ... }
   }
   ```
-* **Error controlado o excepción**:
+* **Controlled Error or Exception**:
   ```json
   {
     "status": "error",
-    "message": "Descripción legible del error",
-    "traceback": "Traceback opcional..."
+    "message": "Human-readable error description",
+    "traceback": "Optional python traceback..."
   }
   ```
 
 ---
 
-## 3. Modelo de Ejecución en el Hilo Principal y Memoria SWIG
+## 3. Main-Thread Execution Model & SWIG Memory Management
 
-### Ejecución Síncrona para Seguridad OpenGL
-En `plugin/server.py`, las conexiones entrantes se procesan de forma síncrona en el hilo principal del script de Vulcan (`handle_client(conn)`). Esto es indispensable porque `maptek.vulcan_gui` interactúa directamente con el contexto gráfico OpenGL de Envisage, el cual no es *thread-safe* si se invoca desde hilos secundarios.
+### Synchronous Execution for OpenGL Thread Safety
+In `plugin/server.py`, incoming socket requests are processed synchronously on Vulcan's main Python script thread (`handle_client(conn)`). This is essential because `maptek.vulcan_gui` interacts directly with Envisage's OpenGL rendering pipeline, which is **not thread-safe** if called from background worker threads.
 
-### Retención de Referencias para `vulcan_gui.temp_object`
-Cuando se crea un objeto gráfico temporal en la ventana 3D de Envisage (`tobj = vg.temp_object(polyline)`), el wrapper SWIG en C++ destruye y borra el dibujo de la pantalla en el instante en que el recolector de basura de Python elimina la variable `tobj`.
-* Para mantener los objetos visibles en 3D, los módulos `drillholes.py` y `design.py` conservan las tuplas `(tobj, polyline)` en las listas globales `_ACTIVE_TEMP_OBJECTS` y `_DESIGN_TEMP_OBJECTS` hasta que el usuario o el agente invoca `clear_display` o `clear_temp`.
+### Reference Retention for `vulcan_gui.temp_object`
+When a temporary 3D graphic object is created in the Envisage viewport (`tobj = vg.temp_object(polyline)`), the C++ SWIG wrapper destroys the object and removes it from the display the moment Python's garbage collector frees the `tobj` variable.
+* To keep visual objects rendered in 3D, `drillholes.py` and `design.py` retain `(tobj, polyline)` tuples in module-level global lists (`_ACTIVE_TEMP_OBJECTS` and `_DESIGN_TEMP_OBJECTS`) until the user or agent explicitly calls `clear_display` or `clear_temp`.
 
 ---
 
-## 4. Seguridad y Autenticación por Token (`VULCAN_MCP_TOKEN`)
+## 4. Security & Token Authentication (`VULCAN_MCP_TOKEN`)
 
-Siguiendo el diseño de seguridad de herramientas MCP de escritorio como [`nkarasiak/qgis-mcp`](https://github.com/nkarasiak/qgis-mcp):
+Adopting the desktop MCP security model pioneered by tools such as [`nkarasiak/qgis-mcp`](https://github.com/nkarasiak/qgis-mcp):
 
-### 1. Comportamiento por Defecto (Loopback `127.0.0.1`)
-* Por defecto, el listener se enlaza exclusivamente a `127.0.0.1` (`localhost`) en el puerto `9877` y la autenticación por token está **desactivada** para facilitar el uso inmediato con `uvx` o `uv run`.
+### 1. Default Behavior (Loopback `127.0.0.1`)
+* By default, the listener binds exclusively to `127.0.0.1` (`localhost`) on port `9877` with token authentication **disabled** to provide frictionless zero-config operation with `uvx` or `uv run`.
 
-### 2. Activación Opcional del Token (`VULCAN_MCP_TOKEN`)
-* Dado que el listener expone `vulcan_execute_code` (ejecución de Python en el intérprete de Maptek Vulcan), activar un token levanta una pared de seguridad local.
-* Siguiendo una filosofía sin archivos `.env`, el token se guarda directamente en el perfil de usuario de Windows mediante PowerShell:
+### 2. Optional Token Activation (`VULCAN_MCP_TOKEN`)
+* Because the listener exposes `vulcan_execute_code` (arbitrary Python execution in Maptek Vulcan's process), activating a token creates a local security perimeter.
+* Under our zero `.env` philosophy, tokens are saved directly into the Windows user environment via PowerShell:
   ```powershell
-  # Generar y guardar permanentemente en Windows User:
+  # 1. Generate and save permanently in Windows User environment:
   $token = python -c "import secrets; print(secrets.token_urlsafe(32))"
   [System.Environment]::SetEnvironmentVariable('VULCAN_MCP_TOKEN', $token, 'User')
 
-  # Verificar:
+  # 2. Verify:
   [System.Environment]::GetEnvironmentVariable('VULCAN_MCP_TOKEN', 'User')
 
-  # Revocar/Eliminar si se desea volver al modo abierto:
+  # 3. Revoke/Delete to revert to open mode:
   [System.Environment]::SetEnvironmentVariable('VULCAN_MCP_TOKEN', $null, 'User')
   ```
-* Al estar guardado en Windows, tanto Maptek Vulcan como el proceso `uvx` descargado desde GitHub lo leen automáticamente vía `os.environ`. Alternativamente, los clientes MCP pueden inyectarlo en su bloque `"env"` de configuración JSON.
+* Because it is stored in the OS environment, both Maptek Vulcan and the external `uvx` process read it automatically via `os.environ`. Alternatively, MCP clients can inject it into their configuration JSON `"env"` block.
 
-### 3. Regla Estricta de Red No-Loopback (`validate_binding_security`)
-* Si configuras `VULCAN_MCP_HOST` en una dirección IP que **no sea loopback** (cualquier dirección distinta de `127.0.0.1`, `localhost` o `::1`, como `0.0.0.0` o `192.168.x.x`), **`VULCAN_MCP_TOKEN` pasa a ser obligatorio**.
-* El listener ejecutará `validate_binding_security()` al iniciar y **se negará a arrancar (`RuntimeError`)** si `VULCAN_MCP_TOKEN` no está definido, impidiendo exponer ejecución remota de código sin autenticación en la red.
+### 3. Strict Non-Loopback Binding Rule (`validate_binding_security`)
+* If you set `VULCAN_MCP_HOST` to any **non-loopback** IP address (anything other than `127.0.0.1`, `localhost`, or `::1`, such as `0.0.0.0` or a local LAN IP), **`VULCAN_MCP_TOKEN` becomes mandatory**.
+* The listener calls `validate_binding_security()` during startup and **strictly refuses to start (`RuntimeError`)** if `VULCAN_MCP_TOKEN` is empty, preventing accidental unauthenticated remote execution exposure.
 
-### 4. Validación Criptográfica en Tiempo Constante
-En [`plugin/server.py`](../plugin/server.py):
+### 4. Constant-Time Cryptographic Verification
+In [`plugin/server.py`](../plugin/server.py):
 ```python
 def _check_auth(req):
     expected = _get_expected_token()
@@ -132,13 +132,13 @@ def _check_auth(req):
     provided = str(req.get("token") or "")
     return hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8"))
 ```
-* Se utiliza `hmac.compare_digest` para evitar ataques de temporización (*timing attacks*).
+* Uses `hmac.compare_digest` to prevent side-channel timing attacks.
 
 ---
 
-## 5. Recarga en Caliente (Hot-Reload) sin Reiniciar Vulcan
+## 5. Hot-Reloading Handlers without Restarting Vulcan
 
-Cuando se edita cualquier handler dentro de `plugin/handlers/`, no es necesario cerrar ni reiniciar el script dentro de Maptek Vulcan. Puedes recargar el módulo en memoria enviando a `vulcan_execute_code`:
+When modifying any handler file in `plugin/handlers/`, you do not need to close or restart the script inside Maptek Vulcan. You can dynamically reload modules in memory by calling `vulcan_execute_code`:
 
 ```python
 import importlib
@@ -149,5 +149,5 @@ import handlers.drillholes
 importlib.reload(handlers.triangulations)
 importlib.reload(handlers.design)
 importlib.reload(handlers.drillholes)
-result = "Handlers recargados exitosamente"
+result = "Handlers reloaded successfully"
 ```

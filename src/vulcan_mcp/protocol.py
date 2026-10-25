@@ -1,4 +1,5 @@
 """Wire protocol and environment configuration for Vulcan MCP."""
+
 import json
 import os
 import struct
@@ -42,7 +43,8 @@ def unpack_message(sock) -> dict:
     if length > MAX_MESSAGE_SIZE:
         raise ValueError(f"Incoming response exceeds maximum allowed size ({length} bytes)")
     payload = _recv_exact(sock, length)
-    return json.loads(payload.decode("utf-8"))
+    result = json.loads(payload.decode("utf-8"))
+    return dict(result) if isinstance(result, dict) else {}
 
 
 def _recv_exact(sock, n: int) -> bytes:

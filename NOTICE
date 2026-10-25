@@ -1,23 +1,26 @@
-Vulcan MCP — Aviso de Autoría y Marcas Registradas (NOTICE)
+Vulcan MCP — Notice of Authorship and Trademarks (NOTICE)
 ===========================================================
 
-Autoría y Derechos de Autor Originales
---------------------------------------
+Original Authorship and Copyright
+---------------------------------
 Copyright 2026 DAVID (LuiccianDev).
-Repositorio y Arquitectura Original: Vulcan MCP (Integración Model Context Protocol para Maptek Vulcan Desktop).
+Original Repository & Architecture: Vulcan MCP (Model Context Protocol Integration for Maptek Vulcan Desktop).
 
-De conformidad con las Secciones 4(b), 4(c) y 4(d) de la licencia Apache License, Version 2.0 (Apache-2.0):
-1. Cualquier reproducción o redistribución de este proyecto o de obras derivadas (en código fuente o formato objeto/empaquetado) DEBE incluir una copia legible de este archivo NOTICE con la atribución de autoría original de DAVID (LuiccianDev).
-2. Cualquier archivo modificado por terceros DEBE incluir un aviso visible indicando que dicho archivo fue modificado.
-3. De acuerdo con la Sección 6 de Apache-2.0, no se concede permiso para usar el nombre del autor original (DAVID / LuiccianDev) para respaldar o promocionar obras derivadas sin autorización previa por escrito.
+In accordance with Sections 4(b), 4(c), and 4(d) of the Apache License, Version 2.0 (Apache-2.0):
+1. Any reproduction or redistribution of this project or derivative works (in source code or object/packaged form)
+   MUST include a legible copy of this NOTICE file attributing original authorship to DAVID (LuiccianDev).
+2. Any files modified by third parties MUST carry prominent notices stating that the files have been changed.
+3. In accordance with Section 6 of Apache-2.0, no permission is granted to use the trade names, trademarks,
+   service marks, or author name (DAVID / LuiccianDev) to endorse or promote derivative works without
+   prior written permission.
 
-Aviso de No Afiliación y Marcas de Terceros
--------------------------------------------
-Maptek®, Vulcan®, Envisage® y Workbench® son marcas comerciales o marcas registradas de Maptek Pty Ltd.
+Non-Affiliation Notice & Third-Party Trademarks
+-----------------------------------------------
+Maptek®, Vulcan®, Envisage®, and Workbench® are trademarks or registered trademarks of Maptek Pty Ltd.
 
-1. Este proyecto ("Vulcan MCP") es un desarrollo independiente de interoperabilidad creado por DAVID (LuiccianDev)
-   y NO está afiliado, patrocinado ni respaldado oficialmente por Maptek Pty Ltd.
-2. Este repositorio NO incluye, copia ni redistribuye archivos binarios, librerías DLL ni código propietario
-   de Maptek Pty Ltd.
-3. La ejecución en vivo del componente listener (`plugin/`) requiere que el usuario final posea una
-   instalación y licencia legítima de Maptek Vulcan Desktop en su propio equipo.
+1. This project ("Vulcan MCP") is an independent interoperability tool developed by DAVID (LuiccianDev)
+   and is NOT officially affiliated with, sponsored by, or endorsed by Maptek Pty Ltd.
+2. This repository DOES NOT include, redistribute, or package proprietary binaries, DLLs, or source code
+   belonging to Maptek Pty Ltd.
+3. Live execution of the embedded listener component (`plugin/`) requires the end-user to possess a valid,
+   licensed installation of Maptek Vulcan Desktop on their host machine.

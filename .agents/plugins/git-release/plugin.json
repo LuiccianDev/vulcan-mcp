@@ -1,0 +1,11 @@
+{
+  "name": "git-release",
+  "displayName": "Git Commit & Semantic Release",
+  "version": "1.0.0",
+  "description": "Automated Conventional Commits, interactive user confirmation, multi-file SemVer synchronization, and Git lifecycle hooks.",
+  "suggestedPrompts": [
+    "Review current changes and propose a Conventional Commit",
+    "Prepare a new version release and update CHANGELOG.md",
+    "Check working tree status and version synchronization"
+  ]
+}

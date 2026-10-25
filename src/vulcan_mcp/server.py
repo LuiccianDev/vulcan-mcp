@@ -1,12 +1,13 @@
 """FastMCP Server for Maptek Vulcan 12 Desktop (Master Compound Tools Mode)."""
+
 import asyncio
 from typing import Literal
 
 try:
-    from mcp.server.fastmcp import FastMCP
-    from mcp.server.fastmcp.exceptions import ToolError
-except ImportError:
-    from mcp.server.mcpserver import MCPServer as FastMCP
+    from mcp.server.fastmcp import FastMCP  # type: ignore[attr-defined]
+    from mcp.server.fastmcp.exceptions import ToolError  # type: ignore[attr-defined]
+except (ImportError, AttributeError):
+    from mcp.server.mcpserver import MCPServer as FastMCP  # type: ignore[assignment]
     from mcp.server.mcpserver.exceptions import ToolError
 
 from mcp.types import ImageContent, ToolAnnotations
@@ -28,7 +29,7 @@ async def _send(command: str, params: dict, timeout: float = TIMEOUT_DEFAULT) ->
 
 @mcp.tool(
     title="Vulcan System & Project Inventory",
-    annotations=ToolAnnotations(readOnlyHint=True),
+    annotations=ToolAnnotations(read_only_hint=True),
 )
 async def vulcan_system(
     action: Literal["ping", "project_info", "capabilities"] = "project_info",
@@ -46,7 +47,7 @@ async def vulcan_system(
 
 @mcp.tool(
     title="Vulcan Block Model Operations (.bmf)",
-    annotations=ToolAnnotations(readOnlyHint=True),
+    annotations=ToolAnnotations(read_only_hint=True),
 )
 async def vulcan_block_model(
     action: Literal["list", "info", "query_xyz", "stats"],
@@ -89,7 +90,7 @@ async def vulcan_block_model(
 
 @mcp.tool(
     title="Vulcan Triangulations & Surfaces (.00t / .tri)",
-    annotations=ToolAnnotations(idempotentHint=True),
+    annotations=ToolAnnotations(idempotent_hint=True),
 )
 async def vulcan_triangulation(
     action: Literal["list", "info", "elevation", "point_inside", "load", "unload"],
@@ -113,7 +114,9 @@ async def vulcan_triangulation(
     title="Vulcan CAD Design Databases (.dgd.isis)",
 )
 async def vulcan_design(
-    action: Literal["list_dbs", "list_layers", "layer_info", "load_layer", "clear_temp", "create_polyline"],
+    action: Literal[
+        "list_dbs", "list_layers", "layer_info", "load_layer", "clear_temp", "create_polyline"
+    ],
     dgd: str | None = None,
     layer: str | None = None,
     load_method: Literal["LOAD_IF_EXISTS", "CLEAR_IF_EXISTS", "ACTIVE_IF_EXISTS"] | None = None,
@@ -158,7 +161,9 @@ async def vulcan_design(
     title="Vulcan Drillhole Databases (.dhd.isis) & 3D Display",
 )
 async def vulcan_drillholes(
-    action: Literal["list_dbs", "schema", "holes", "hole", "high_grade", "display", "clear_display"],
+    action: Literal[
+        "list_dbs", "schema", "holes", "hole", "high_grade", "display", "clear_display"
+    ],
     db: str | None = None,
     hole: str | None = None,
     holes: list[str] | None = None,
@@ -211,7 +216,8 @@ async def vulcan_legend(
     scd: str | None = None,
     scheme: str | None = None,
     table: str | None = None,
-    preset: Literal["high_contrast_mining", "classic_blue_to_red", "traffic_light", "hot_metal"] | None = None,
+    preset: Literal["high_contrast_mining", "classic_blue_to_red", "traffic_light", "hot_metal"]
+    | None = None,
     colours: list[str] | None = None,
 ) -> dict:
     """Master tool for reading and updating Maptek Envisage colour legends (.scd).
@@ -238,7 +244,7 @@ async def vulcan_legend(
 
 @mcp.tool(
     title="Vulcan Viewport Screenshot (Token-Optimised)",
-    annotations=ToolAnnotations(readOnlyHint=True),
+    annotations=ToolAnnotations(read_only_hint=True),
 )
 async def vulcan_screenshot(
     max_width: int = 800,
@@ -249,8 +255,10 @@ async def vulcan_screenshot(
     Downscales to `max_width` (default 800px) and encodes as JPEG (`quality=70`)
     to minimise token consumption while preserving clear visual context of the 3D scene.
     """
-    res = await _send("canvas", {"action": "screenshot", "max_width": max_width, "quality": quality})
-    return ImageContent(type="image", data=res["data"], mimeType=res["mime_type"])
+    res = await _send(
+        "canvas", {"action": "screenshot", "max_width": max_width, "quality": quality}
+    )
+    return ImageContent(type="image", data=res["data"], mime_type=res["mime_type"])
 
 
 @mcp.tool(
@@ -267,7 +275,7 @@ async def vulcan_canvas(
 
 @mcp.tool(
     title="Execute Python Code in Vulcan",
-    annotations=ToolAnnotations(destructiveHint=True),
+    annotations=ToolAnnotations(destructive_hint=True),
 )
 async def vulcan_execute_code(code: str) -> dict:
     """Execute custom Python code inside Vulcan's active session (`vulcan` and `vulcan_gui` preloaded).
@@ -276,7 +284,9 @@ async def vulcan_execute_code(code: str) -> dict:
     """
     res = await _send("execute_code", {"code": code}, timeout=TIMEOUT_LONG)
     if not res.get("executed", False):
-        raise ToolError(f"Vulcan script failed:\n{res.get('traceback')}\nOutput:\n{res.get('stdout')}")
+        raise ToolError(
+            f"Vulcan script failed:\n{res.get('traceback')}\nOutput:\n{res.get('stdout')}"
+        )
     return res
 
 
