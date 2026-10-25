@@ -1,105 +1,85 @@
-# Vulcan MCP — Integración de Maptek Vulcan 12 Desktop con IA
+# Vulcan MCP — Connect Maptek Vulcan 12 Desktop to AI Agents via MCP
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
-[![Python MCP Server](https://img.shields.io/badge/MCP_Server-Python_3.12+-blue.svg)](./pyproject.toml)
+[![Python MCP Server](https://img.shields.io/badge/MCP_Server-Python_3.11+-blue.svg)](./pyproject.toml)
 [![Vulcan SDK](https://img.shields.io/badge/Maptek_Vulcan_12-Python_3.5.2-orange.svg)](./docs/MAPTEK_PYTHON_SDK.md)
-[![Managed with uv](https://img.shields.io/badge/uv-Astral-purple.svg)](https://docs.astral.sh/uv/)
+[![uv / uvx](https://img.shields.io/badge/uvx-Astral-purple.svg)](https://docs.astral.sh/uv/)
 
-Puente de interoperabilidad basado en el **Model Context Protocol (MCP)** que conecta **Maptek Vulcan 12 Desktop (Envisage)** con asistentes de Inteligencia Artificial (**Google Antigravity**, **Claude Desktop**, **Cursor**, **VS Code**, **Claude Code**).
+Conecta **Maptek Vulcan 12 Desktop (Envisage)** directamente con agentes de Inteligencia Artificial (**Google Antigravity**, **Claude Desktop**, **Claude Code**, **Cursor**, **VS Code**) a través del **Model Context Protocol (MCP)**.
 
-Diseñado con una arquitectura desacoplada en dos procesos para unir el intérprete embebido de Maptek Vulcan 12 (`Python 3.5.2` + bindings C++/SWIG `maptek.vulcan` y `maptek.vulcan_gui`) con el ecosistema moderno de IA (`Python 3.12+` / `FastMCP`), permitiendo consultar modelos de bloques, auditar triangulaciones, explorar sondajes ISIS, operar capas CAD 3D y capturar vistas de Envisage en lenguaje natural.
-
----
-
-## Tabla de Contenidos
-
-1. [Stack Tecnológico y Versiones](#-stack-tecnológico-y-versiones)
-2. [Arquitectura de Comunicación](#-arquitectura-de-comunicación)
-3. [Catálogo de las 9 Herramientas Maestras](#-catálogo-de-las-9-herramientas-maestras)
-4. [Guía de Inicio Rápido](#-guía-de-inicio-rápido)
-5. [Seguridad y Autenticación por Token (`.env` / `os.getenv`)](#-seguridad-y-autenticación-por-token-env--osgetenv)
-6. [Ejemplos de Prompts Mineros](#-ejemplos-de-prompts-mineros)
-7. [Documentación Técnica Detallada (`docs/`)](#-documentación-técnica-detallada-docs)
-8. [Solución de Problemas (Troubleshooting)](#-solución-de-problemas-troubleshooting)
-9. [Estructura del Proyecto](#-estructura-del-proyecto)
-10. [Ejecución de Pruebas](#-ejecución-de-pruebas)
-11. [Autoría, Licencia y Aviso Legal](#-autoría-licencia-y-aviso-legal)
+Permite consultar modelos de bloques (`.bmf`), auditar triangulaciones 3D (`.00t`), explorar bases de datos de sondajes ISIS (`.dhd.isis`), operar diseños CAD (`.dgd.isis`), modificar leyendas (`.scd`), capturar la ventana 3D de Envisage y ejecutar scripts de PyVulcan en lenguaje natural.
 
 ---
 
-## 🛠 Stack Tecnológico y Versiones
+## ✨ Características Principales (Features)
 
-| Componente | Tecnología / Paquete | Versión | Rol en el Proyecto |
-| :--- | :--- | :--- | :--- |
-| **Software Minero** | Maptek Vulcan Desktop (Envisage) | `12.x` | Motor geológico, CAD 3D y modelamiento de bloques |
-| **SDK Nativo Interno** | `maptek.vulcan` & `maptek.vulcan_gui` | `Python 3.5.2` (SWIG) | Lectura/escritura de `.bmf`, `.00t`, `.dgd.isis`, `.dhd.isis` y viewport 3D |
-| **Runtime Servidor MCP** | CPython (gestionado por `uv`) | `3.12.9` (`>=3.11`) | Ejecución del servidor MCP externo asíncrono |
-| **Framework MCP** | `mcp[cli]` (`FastMCP`) | `2.3.0` | Exposición de las 9 Herramientas Maestras y contenido visual |
-| **Validación de Datos** | `pydantic` | `2.14.1` | Tipado y validación estricta de esquemas JSON |
-| **Gestor de Paquetes** | `uv` (Astral) | Última estable | Resolución y ejecución sin gestión manual de entornos virtuales |
-| **Suite de Pruebas** | `pytest` + `pytest-asyncio` | `9.1.1` / `1.4.0` | 9 pruebas unitarias + 9 niveles de pruebas de integración en vivo |
+* **Modelos de Bloques (`.bmf`)**: Inspección de variables, esquemas de grillas, consulta puntual en $(X, Y, Z)$, cálculo de tonelaje, volumen y ley media ponderada con ley de corte (`cutoff`).
+* **Triangulaciones y Sólidos 3D (`.00t` / `.tri`)**: Conteo de nodos y caras, cálculo de área superficial y volumen cerrado, validación topológica (`is_consistent`, `is_crossing`), centroide, interpolación de cota $Z$ y prueba de punto dentro de sólido (`point_inside`).
+* **Bases de Datos de Sondajes (`.dhd.isis`)**: Soporte bilingüe automático (español/inglés: `COLLARES`, `DIRECCIONES`, `LEYES`, `BUZ`/`BUZAMIENTO`/`DIP`, `FROM`/`DESDE`), búsqueda de interceptos de alta ley y *desurvey* 3D coloreado por ley en el viewport de Envisage.
+* **Diseño CAD 3D (`.dgd.isis`)**: Listado de bases de diseño y capas, estadísticas geométricas, cálculo de **área planar ($m^2$)** y centroide, carga en 3D y creación de polilíneas/polígonos cerrados.
+* **Leyendas (`.scd`) y Captura Visual 3D**: Modificación de esquemas de color con respaldo automático `.scd.bak` y captura JPEG optimizada de la ventana 3D de Envisage (`vulcan_screenshot`).
+* **Scripting PyVulcan (`vulcan_execute_code`)**: Ejecución directa de código Python dentro del intérprete de Maptek Vulcan con `vulcan`, `vulcan_gui` y `project_dir` pre-inyectados.
 
 ---
 
-## 🏗 Arquitectura de Comunicación
+## 🏗 Arquitectura
+
+**Vulcan MCP** se divide en dos componentes que se comunican por un socket TCP local (`127.0.0.1:9877`) con framing binario `uint32`:
+
+* **AI Agent** $\leftrightarrow$ **MCP Server (`FastMCP` / `src/vulcan_mcp/server.py`)**: Corre fuera de Vulcan en `Python 3.11+` (ejecutado al vuelo vía `uvx` o `uv run`) y expone las **9 Herramientas Maestras**.
+* **TCP Socket (`127.0.0.1:9877`)** $\leftrightarrow$ **Vulcan Listener (`vulcan_listener/server.py`)**: Corre dentro del intérprete embebido de Maptek Vulcan 12 (`Python 3.5.2`), procesando comandos en el hilo principal sobre el SDK nativo C++/SWIG (`maptek.vulcan` y `maptek.vulcan_gui`).
 
 ```mermaid
 flowchart LR
-    A["Agente IA<br/>(Antigravity / Claude / Cursor)"] <-->|"MCP (Stdio)<br/>9 Master Tools + JPEG"| B["Servidor MCP Externo<br/>(Python 3.12+ / FastMCP)"]
-    B <-->|"Socket TCP 127.0.0.1:9877<br/>Framing uint32 + Token HMAC"| C["Listener Interno en Vulcan<br/>(Python 3.5.2 embebido)"]
-    C <-->|"C++ / SWIG Bindings"| D["Maptek Vulcan 12 SDK<br/>(block_model, triangulation, dgd, isisdb, vulcan_gui)"]
+    A["Agente IA<br/>(Antigravity / Claude / Cursor)"] <-->|"MCP (Stdio)<br/>uvx vulcan-mcp-server"| B["Servidor MCP<br/>(src/vulcan_mcp)"]
+    B <-->|"TCP 127.0.0.1:9877<br/>Framing uint32 + JSON"| C["Vulcan Listener<br/>(vulcan_listener/server.py)"]
+    C <-->|"C++ / SWIG Bindings"| D["Maptek Vulcan 12 Desktop<br/>(maptek.vulcan & vulcan_gui)"]
 ```
 
 ---
 
-## 🧰 Catálogo de las 9 Herramientas Maestras
+## 🚀 Inicio Rápido (Quick Start)
 
-Referencia completa de parámetros y respuestas JSON en [`docs/MCP_TOOLS_REFERENCE.md`](./docs/MCP_TOOLS_REFERENCE.md).
+No necesitas crear ni configurar entornos virtuales manualmente si usas [`uv` / `uvx`](https://docs.astral.sh/uv/).
 
-| # | Herramienta MCP | Dominio Minero | Acciones Incluidas (`action=`) | Capacidades Destacadas |
-| :-: | :--- | :--- | :--- | :--- |
-| 1 | **`vulcan_system`** | Sistema y Proyecto | `ping`, `project_info`, `capabilities` | Estado del socket, inventario completo del proyecto minero y librerías activas. |
-| 2 | **`vulcan_block_model`** | Modelos de Bloques (`.bmf`) | `list`, `info`, `query_xyz`, `stats` | Esquemas de bloques, consulta en $(X, Y, Z)$, tonelaje, ley media ponderada y ley de corte (`cutoff`). |
-| 3 | **`vulcan_triangulation`** | Superficies y Sólidos (`.00t`/`.tri`) | `list`, `info`, `elevation`, `point_inside`, `load`, `unload` | Nodos, caras, volumen, consistencia topológica (`is_consistent`, `is_crossing`), centroide, cota $Z$ y punto dentro de sólido (`point_inside`). |
-| 4 | **`vulcan_design`** | Diseño CAD 3D (`.dgd.isis`) | `list_dbs`, `list_layers`, `layer_info`, `load_layer`, `clear_temp`, `create_polyline` | Inspección de capas, longitud, **área planar ($m^2$)**, centroide, carga en 3D y creación de polilíneas/polígonos. |
-| 5 | **`vulcan_drillholes`** | Sondajes ISIS (`.dhd.isis`) | `list_dbs`, `schema`, `holes`, `hole`, `high_grade`, `display`, `clear_display` | Soporte bilingüe (`COLLARES`, `DIRECCIONES`, `LEYES`, `BUZ`/`DIP`), búsqueda de alta ley y *desurvey* 3D coloreado por ley en Envisage. |
-| 6 | **`vulcan_legend`** | Leyendas Envisage (`.scd`) | `list`, `inspect`, `update`, `restore` | Inspección y actualización de esquemas (`BLOCK_COLOUR`, `DRILL_COLOUR`) con respaldo automático `.scd.bak`. |
-| 7 | **`vulcan_screenshot`** | Captura Visual 3D | *(Directa: `max_width=800`, `quality=70`)* | Captura de la ventana 3D de Envisage comprimida en JPEG para bajo consumo de tokens. |
-| 8 | **`vulcan_canvas`** | Interfaz y Macros | `macro`, `report` | Disparo de macros de Envisage Workbench y escritura en la ventana de reportes. |
-| 9 | **`vulcan_execute_code`** | Scripting PyVulcan | *(Directa: `code`)* | Ejecución directa de Python dentro de Vulcan con `vulcan`, `vulcan_gui` y `project_dir` pre-inyectados. |
+### Paso 1: Iniciar el Listener dentro de Maptek Vulcan 12
 
----
-
-## 🚀 Guía de Inicio Rápido
-
-### 1. Sincronizar Dependencias con `uv`
-No necesitas crear ni activar entornos virtuales manualmente (`uv` administra `.venv` en segundo plano):
-```powershell
-uv sync
-```
-
-### 2. Iniciar el Listener dentro de Maptek Vulcan 12
-1. Abre tu proyecto minero en **Maptek Vulcan 12 Desktop**.
-2. En el menú principal selecciona **File > Python Script**.
-3. Selecciona el archivo:
-   `C:\Users\DAVID\Desktop\WorksSpacesCoding\vulcan-mcp\vulcan_listener\server.py`
-4. Marca la casilla **"Run in shell window"** y pulsa **OK**.
-5. Se abrirá la consola confirmando:
+1. Descarga o clona este repositorio en tu equipo para tener la carpeta [`vulcan_listener/`](./vulcan_listener).
+2. Abre tu proyecto minero en **Maptek Vulcan 12 Desktop (Envisage)**.
+3. En el menú principal de Vulcan ve a **File > Python Script**.
+4. Selecciona el archivo `vulcan_listener/server.py`, marca la casilla **"Run in shell window"** y haz clic en **OK**.
+5. Se abrirá la ventana de consola mostrando:
    ```text
    [Vulcan MCP] Vulcan MCP Listener started on 127.0.0.1:9877
    ```
 
-### 3. Configurar tu Cliente MCP
+### Paso 2: Conectar tu Agente de IA (`uvx` directo desde GitHub)
 
-#### Opción A: En Google Antigravity (Plugin Local Preconfigurado)
-El repositorio incluye el plugin oficial en [`.agents/plugins/vulcan-mcp/`](./.agents/plugins/vulcan-mcp), que activa automáticamente:
-* El servidor MCP ([`mcp_config.json`](./.agents/plugins/vulcan-mcp/mcp_config.json)).
-* El agente especialista **`mining-geologist`** ([`agents/mining-geologist.md`](./.agents/plugins/vulcan-mcp/agents/mining-geologist.md)).
-* Las 4 **Skills** mineras (`vulcan-tools-catalog`, `vulcan-file-formats`, `vulcan-python-sdk`, `vulcan-workflow`).
-* El **Hook** de verificación de conexión (`hooks.json`).
+#### En Claude Desktop / Cursor / VS Code / Windsurf (`mcp.json` / `claude_desktop_config.json`)
+Ejecuta el servidor directamente desde GitHub con `uvx` sin necesidad de rutas locales:
 
-#### Opción B: En Claude Desktop / Cursor / VS Code
-Añade este bloque en tu archivo `claude_desktop_config.json` o `.cursor/mcp.json`:
+```json
+{
+  "mcpServers": {
+    "vulcan": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "https://github.com/LuiccianDev/vulcan-mcp/archive/refs/heads/master.zip",
+        "vulcan-mcp-server"
+      ]
+    }
+  }
+}
+```
+
+#### En Claude Code (CLI)
+```bash
+claude mcp add -s user vulcan -- uvx --from https://github.com/LuiccianDev/vulcan-mcp/archive/refs/heads/master.zip vulcan-mcp-server
+```
+
+#### En Google Antigravity (Plugin Incluido o Local)
+Este repositorio incluye el plugin completo en [`.agents/plugins/vulcan-mcp/`](./.agents/plugins/vulcan-mcp), que registra automáticamente el servidor MCP, el agente especialista **`mining-geologist`**, las **4 Skills** mineras y el hook de diagnóstico. Si prefieres ejecutar desde tu copia local con `uv`:
 
 ```json
 {
@@ -109,7 +89,7 @@ Añade este bloque en tu archivo `claude_desktop_config.json` o `.cursor/mcp.jso
       "args": [
         "run",
         "--directory",
-        "C:\\Users\\DAVID\\Desktop\\WorksSpacesCoding\\vulcan-mcp",
+        "C:\\ruta\\a\\vulcan-mcp",
         "vulcan-mcp-server"
       ]
     }
@@ -119,89 +99,75 @@ Añade este bloque en tu archivo `claude_desktop_config.json` o `.cursor/mcp.jso
 
 ---
 
-## 🔒 Seguridad y Autenticación por Token (`.env` / `os.getenv`)
+## 🧰 Catálogo de las 9 Herramientas Maestras
 
-La comunicación TCP entre el Servidor MCP y el Listener de Vulcan cuenta con autenticación HMAC en tiempo constante (`hmac.compare_digest`) sin exponer claves en `mcp_config.json`:
+Consulta todos los parámetros y respuestas JSON en [`docs/MCP_TOOLS_REFERENCE.md`](./docs/MCP_TOOLS_REFERENCE.md).
 
-1. Copia la plantilla [`.env.example`](./.env.example) a `.env` en la raíz del proyecto (`.env` está protegido por [`.gitignore`](./.gitignore)):
-   ```ini
-   VULCAN_MCP_HOST=127.0.0.1
-   VULCAN_MCP_PORT=9877
-   VULCAN_MCP_TOKEN=tu-clave-secreta-segura
-   ```
-2. Tanto el **Servidor MCP** ([`src/vulcan_mcp/protocol.py`](./src/vulcan_mcp/protocol.py)) como el **Listener de Vulcan** ([`vulcan_listener/server.py`](./vulcan_listener/server.py)) buscan primero `os.getenv("VULCAN_MCP_TOKEN")` en el sistema y, como respaldo automático, leen el archivo `.env` de la raíz del proyecto en cada petición.
-3. Cualquier conexión sin token o con un token distinto es rechazada inmediatamente con `Authentication failed: invalid or missing VULCAN_MCP_TOKEN`.
-
----
-
-## 💬 Ejemplos de Prompts Mineros
-
-Una vez conectado, puedes pedirle a tu asistente de IA:
-
-* **Auditoría de Proyecto**: *"Haz un inventario completo del proyecto abierto en Vulcan y dime qué modelos de bloques, triangulaciones y bases de sondajes existen."*
-* **Cubicación y Ley de Corte**: *"Calcula el tonelaje y la ley media ponderada de `CUT` en el modelo `bmw_ml_30_30_30.bmf` aplicando una ley de corte de 0.5% Cu y densidad de 2.7 t/m³."*
-* **Validación de Superficies y Sólidos**: *"Revisa la triangulación `topografia_1.00t`, verifica si es consistente, cuál es su centroide y cuál es la cota Z en la coordenada (474665, 4479896)."*
-* **Exploración de Sondajes**: *"Busca los 5 mejores interceptos de cobre (`CUT >= 1.0%`) en la tabla `LEYES` de `bmw_sondajes.dhd.isis`, muéstralos en el viewport 3D y toma una captura de pantalla."*
+| # | Herramienta MCP | Dominio Minero | Acciones (`action=`) | Descripción |
+| :-: | :--- | :--- | :--- | :--- |
+| 1 | **`vulcan_system`** | Sistema y Proyecto | `ping`, `project_info`, `capabilities` | Estado de la conexión, inventario completo de archivos del proyecto y módulos SDK disponibles. |
+| 2 | **`vulcan_block_model`** | Modelos de Bloques (`.bmf`) | `list`, `info`, `query_xyz`, `stats` | Esquema de bloques, consulta en $(X,Y,Z)$, tonelaje, volumen y ley media ponderada por corte (`cutoff`). |
+| 3 | **`vulcan_triangulation`** | Triangulaciones (`.00t`/`.tri`) | `list`, `info`, `elevation`, `point_inside`, `load`, `unload` | Nodos, caras, volumen, consistencia topológica, centroide, cota $Z$ y punto dentro de sólido. |
+| 4 | **`vulcan_design`** | Diseño CAD 3D (`.dgd.isis`) | `list_dbs`, `list_layers`, `layer_info`, `load_layer`, `clear_temp`, `create_polyline` | Inspección de capas CAD, longitud, área planar ($m^2$), centroide, carga en 3D y creación de polilíneas. |
+| 5 | **`vulcan_drillholes`** | Sondajes ISIS (`.dhd.isis`) | `list_dbs`, `schema`, `holes`, `hole`, `high_grade`, `display`, `clear_display` | Tablas y columnas de sondajes, búsqueda de alta ley y *desurvey* 3D coloreado por ley en Envisage. |
+| 6 | **`vulcan_legend`** | Leyendas (`.scd`) | `list`, `inspect`, `update`, `restore` | Inspección y actualización de esquemas de color con copia de seguridad `.scd.bak`. |
+| 7 | **`vulcan_screenshot`** | Captura Visual 3D | *(Directa: `max_width`, `quality`)* | Captura de pantalla de la ventana 3D de Envisage comprimida en JPEG. |
+| 8 | **`vulcan_canvas`** | Interfaz y Macros | `macro`, `report` | Ejecución de macros de Envisage Workbench y escritura en la ventana de reportes. |
+| 9 | **`vulcan_execute_code`** | Scripting PyVulcan | *(Directa: `code`)* | Ejecución directa de Python dentro de Maptek Vulcan (`vulcan`, `vulcan_gui`, `project_dir`). |
 
 ---
 
-## 📚 Documentación Técnica Detallada (`docs/`)
+## 🔒 Seguridad y Autenticación por Token (`VULCAN_MCP_TOKEN`)
 
-Toda la referencia técnica oficial extraída de Maptek Vulcan Help y Maptek Python SDK se encuentra en la carpeta [`docs/`](./docs):
+Dado que el listener permite ejecutar código Python arbitrario en Vulcan (`vulcan_execute_code`), **Vulcan MCP** implementa el mismo modelo de seguridad de socket que [`nkarasiak/qgis-mcp`](https://github.com/nkarasiak/qgis-mcp):
 
-* **[`docs/README.md`](./docs/README.md)**: Índice general de la documentación.
-* **[`docs/ARCHITECTURE_AND_SECURITY.md`](./docs/ARCHITECTURE_AND_SECURITY.md)**: Protocolo binario TCP `uint32`, gestión de memoria SWIG/OpenGL, seguridad por token y *hot-reload*.
-* **[`docs/MCP_TOOLS_REFERENCE.md`](./docs/MCP_TOOLS_REFERENCE.md)**: Parámetros detallados y ejemplos JSON de las 9 Herramientas Maestras.
-* **[`docs/VULCAN_FILE_FORMATS.md`](./docs/VULCAN_FILE_FORMATS.md)**: Especificación de archivos `.bmf`, `.00t`, `.dgd.isis`, `.dhd.isis`, `.scd`, `.isix` y `.wrk`.
-* **[`docs/MAPTEK_PYTHON_SDK.md`](./docs/MAPTEK_PYTHON_SDK.md)**: Catálogo completo de clases y métodos de `maptek.vulcan`, `maptek.vulcan_gui` y `mapteksdk 2.0`.
-
----
-
-## 🛠 Solución de Problemas (Troubleshooting)
-
-1. **Un comando da `CommandTimeout` (Timeout de 30s/120s)**:
-   * **Causa más común**: Maptek Vulcan Desktop está mostrando un cuadro de diálogo modal emergente en pantalla (por ejemplo: *"No design database is currently open"* o confirmación de guardado). En Vulcan, cualquier diálogo modal bloquea el hilo principal de Python hasta que haces clic en **OK** o **Cancel**.
-2. **Error `Authentication failed: invalid or missing VULCAN_MCP_TOKEN`**:
-   * Verifica que el valor de `VULCAN_MCP_TOKEN` en tu archivo `.env` coincida y, si acabas de editar el código del servidor MCP, recarga el servidor MCP en tu IDE (*Reload MCP Server*).
-3. **Recargar cambios en handlers sin reiniciar Vulcan (*Hot-Reload*)**:
-   * Puedes recargar cualquier módulo de `vulcan_listener/handlers/` en vivo ejecutando `importlib.reload(handlers.<modulo>)` a través de `vulcan_execute_code`.
-
----
-
-## 📁 Estructura del Proyecto
-
-```text
-vulcan-mcp/
-├── .agents/plugins/vulcan-mcp/     # Plugin oficial para Antigravity (Agente, 4 Skills, Hooks, Reglas y MCP)
-├── docs/                           # Documentación técnica extraída de Maptek Vulcan & Python SDK
-│   ├── README.md
-│   ├── ARCHITECTURE_AND_SECURITY.md
-│   ├── MCP_TOOLS_REFERENCE.md
-│   ├── VULCAN_FILE_FORMATS.md
-│   └── MAPTEK_PYTHON_SDK.md
-├── src/vulcan_mcp/                 # Servidor MCP externo (Python 3.12+ / FastMCP)
-│   ├── server.py                   # Definición de las 9 Master Tools
-│   ├── client.py                   # Cliente TCP hacia el listener de Vulcan
-│   └── protocol.py                 # Framing binario uint32 + configuración .env / os.getenv
-├── vulcan_listener/                # Listener interno para Maptek Vulcan 12 (Python 3.5 compatible)
-│   ├── server.py                   # Servidor socket TCP síncrono sobre el hilo principal de Vulcan
-│   ├── wire.py                     # Serialización JSON para tipos SWIG/C++ de Vulcan
-│   └── handlers/                   # Módulos por dominio (block_models, triangulations, design, drillholes, legends, canvas, code, system)
-├── tests/                          # Suite de pruebas automatizadas
-│   ├── test_vulcan_mcp.py          # 9 pruebas unitarias (sin requerir Vulcan abierto)
-│   └── test_live.py                # 9 niveles de integración en vivo contra Maptek Vulcan 12
-├── .env.example                    # Plantilla de variables de entorno y token
-├── GEMINI.md                       # Reglas operativas del workspace
-├── LICENSE                         # Licencia Apache License 2.0 (Apache-2.0)
-├── NOTICE                          # Créditos de autoría original (Sección 4.d Apache-2.0) y aviso de marcas de Maptek
-└── pyproject.toml                  # Definición del paquete y dependencias para uv
-```
+1. **Comportamiento por defecto (`localhost`)**:
+   * Por defecto, la autenticación por token está **desactivada**. El listener se enlaza exclusivamente a `127.0.0.1` (loopback), impidiendo conexiones desde otros equipos en la red y permitiendo que `uvx` funcione de inmediato.
+2. **Activar Autenticación por Token (`VULCAN_MCP_TOKEN`)**:
+   * Genera un secreto aleatorio largo:
+     ```powershell
+     python -c "import secrets; print(secrets.token_urlsafe(32))"
+     ```
+   * Define la variable de entorno `VULCAN_MCP_TOKEN` en el entorno donde se ejecuta Maptek Vulcan antes de iniciar `vulcan_listener/server.py` (la consola mostrará `Token authentication: ENABLED`).
+   * Añade el mismo valor en el bloque `"env"` de tu cliente MCP (`uvx`):
+     ```json
+     {
+       "mcpServers": {
+         "vulcan": {
+           "command": "uvx",
+           "args": [
+             "--from",
+             "https://github.com/LuiccianDev/vulcan-mcp/archive/refs/heads/master.zip",
+             "vulcan-mcp-server"
+           ],
+           "env": {
+             "VULCAN_MCP_TOKEN": "tu-secreto-largo-aleatorio"
+           }
+         }
+       }
+     }
+     ```
+   * El listener verifica cada petición mediante comparación en tiempo constante (`hmac.compare_digest`).
+3. **Regla Estricta Non-Loopback**:
+   * Si configuras `VULCAN_MCP_HOST` en una dirección que **no sea loopback** (distinta de `127.0.0.1`, `localhost` o `::1`), **el listener se negará a arrancar a menos que `VULCAN_MCP_TOKEN` esté explícitamente definido**, evitando exponer ejecución remota de código sin contraseña en la red.
 
 ---
 
-## 🧪 Ejecución de Pruebas
+## 📚 Documentación Técnica (`docs/`) y Stack
 
-* **Pruebas Unitarias (rápidas, sin requerir Vulcan abierto)**:
+| Componente | Tecnología | Versión | Documentación de Referencia |
+| :--- | :--- | :--- | :--- |
+| **Software Minero** | Maptek Vulcan Desktop (Envisage) | `12.x` | [`docs/VULCAN_FILE_FORMATS.md`](./docs/VULCAN_FILE_FORMATS.md) |
+| **SDK Nativo Interno** | `maptek.vulcan` & `maptek.vulcan_gui` | `Python 3.5.2` (SWIG) | [`docs/MAPTEK_PYTHON_SDK.md`](./docs/MAPTEK_PYTHON_SDK.md) |
+| **Servidor MCP** | `mcp[cli]` (`FastMCP`) + `pydantic` | `2.3.0` / `2.14.1` (`Python 3.12`) | [`docs/MCP_TOOLS_REFERENCE.md`](./docs/MCP_TOOLS_REFERENCE.md) |
+| **Transporte y Seguridad** | Socket TCP `uint32` + HMAC | `127.0.0.1:9877` | [`docs/ARCHITECTURE_AND_SECURITY.md`](./docs/ARCHITECTURE_AND_SECURITY.md) |
+
+---
+
+## 🛠 Solución de Problemas y Pruebas
+
+* **Un comando se detiene por Timeout (`CommandTimeout`)**: Verifica si Maptek Vulcan Desktop muestra una ventana modal emergente en pantalla (ej. *"No design database is currently open"*). En Vulcan, los diálogos modales pausan el hilo principal de Python hasta que pulsas **OK**.
+* **Pruebas Unitarias (sin requerir Vulcan abierto)**:
   ```powershell
   uv run --no-sync pytest tests/test_vulcan_mcp.py -v
   ```
@@ -218,5 +184,4 @@ vulcan-mcp/
 * **Licencia**: Distribuido bajo la licencia **[Apache License, Version 2.0 (Apache-2.0)](./LICENSE)**.
   * **Atribución obligatoria (`Sección 4.d`)**: Cualquier redistribución o derivado debe conservar íntegramente los avisos de autoría contenidos en [`NOTICE`](./NOTICE).
   * **Registro de cambios (`Sección 4.b`)**: Cualquier archivo modificado por terceros debe incluir un aviso claro indicando que fue alterado.
-  * **Protección de patentes y marca (`Secciones 3 y 6`)**: Incluye concesión de patentes con cláusula de represalia y prohíbe el uso del nombre del autor original para promocionar derivados sin autorización.
 * **Aviso de Marcas Registradas**: *Maptek®, Vulcan®, Envisage® y Workbench® son marcas registradas de Maptek Pty Ltd. Este proyecto es un desarrollo independiente y no incluye ni redistribuye binarios ni código propietario de Maptek.*

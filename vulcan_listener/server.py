@@ -11,8 +11,6 @@ import traceback
 
 # Ensure package imports work when executed directly by path
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(HERE)
-ENV_FILE = os.path.join(ROOT_DIR, ".env")
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
@@ -29,29 +27,10 @@ from handlers import (  # noqa: E402, F401
 )
 from handlers.common import COMMANDS, CommandError  # noqa: E402
 
-
-def _get_config(key, default=""):
-    val = os.getenv(key, "").strip()
-    if val:
-        return val
-    if os.path.isfile(ENV_FILE):
-        try:
-            with open(ENV_FILE, "r") as fh:
-                for raw in fh:
-                    line = raw.strip()
-                    if not line or line.startswith("#") or "=" not in line:
-                        continue
-                    k, v = line.split("=", 1)
-                    if k.strip() == key:
-                        return v.strip().strip('"').strip("'")
-        except Exception:
-            pass
-    return default
-
-
-HOST = _get_config("VULCAN_MCP_HOST", "127.0.0.1") or "127.0.0.1"
-PORT = int(_get_config("VULCAN_MCP_PORT", "9877") or "9877")
-TOKEN = None
+HOST = os.environ.get("VULCAN_MCP_HOST", "127.0.0.1").strip() or "127.0.0.1"
+PORT = int(os.environ.get("VULCAN_MCP_PORT", "9877").strip() or "9877")
+TOKEN = os.environ.get("VULCAN_MCP_TOKEN", "").strip()
+LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
 
 
 def log(msg):
@@ -65,8 +44,29 @@ def log(msg):
         pass
 
 
+def is_loopback(host):
+    return str(host or "").strip().lower() in LOOPBACK_HOSTS
+
+
+def _get_expected_token():
+    if TOKEN:
+        return TOKEN
+    return os.environ.get("VULCAN_MCP_TOKEN", "").strip()
+
+
+def validate_binding_security(host=None, token=None):
+    target_host = HOST if host is None else host
+    active_token = _get_expected_token() if token is None else str(token or "").strip()
+    if not is_loopback(target_host) and not active_token:
+        raise RuntimeError(
+            "Refusing to bind to non-loopback address '{}' without VULCAN_MCP_TOKEN set.".format(
+                target_host
+            )
+        )
+
+
 def _check_auth(req):
-    expected = _get_config("VULCAN_MCP_TOKEN", "") if TOKEN is None else TOKEN
+    expected = _get_expected_token()
     if not expected:
         return True
     provided = str(req.get("token") or "")
@@ -116,16 +116,17 @@ def handle_client(conn):
 
 
 def serve_forever():
+    validate_binding_security(HOST, _get_expected_token())
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind((HOST, PORT))
     sock.listen(5)
-    token_active = bool(_get_config("VULCAN_MCP_TOKEN", ""))
+    token_active = bool(_get_expected_token())
     log("=" * 62)
     log("Vulcan MCP Listener started on {}:{}".format(HOST, PORT))
     log("Working directory: {}".format(os.getcwd()))
     log("Registered domains: {}".format(", ".join(sorted(COMMANDS))))
-    log("Token auth: {}".format("ENABLED (os.getenv / .env)" if token_active else "DISABLED (local open mode)"))
+    log("Token authentication: {}".format("ENABLED" if token_active else "DISABLED (localhost open mode)"))
     log("Keep this window open while using your AI client. Ctrl+C to stop.")
     log("=" * 62)
     try:

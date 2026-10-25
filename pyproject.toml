@@ -23,6 +23,11 @@ dependencies = [
     "pydantic>=2.0,<3",
 ]
 
+[project.urls]
+Homepage = "https://github.com/LuiccianDev/vulcan-mcp"
+Repository = "https://github.com/LuiccianDev/vulcan-mcp"
+Issues = "https://github.com/LuiccianDev/vulcan-mcp/issues"
+
 [project.scripts]
 vulcan-mcp-server = "vulcan_mcp.server:main"
 

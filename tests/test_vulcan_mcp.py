@@ -16,7 +16,8 @@ import pytest  # noqa: E402
 
 @pytest.fixture(autouse=True)
 def _isolate_unit_test_token(monkeypatch):
-    """Isolate unit tests from any local .env token unless explicitly tested."""
+    """Isolate unit tests from any VULCAN_MCP_TOKEN in os.environ unless explicitly tested."""
+    monkeypatch.delenv("VULCAN_MCP_TOKEN", raising=False)
     monkeypatch.setattr(listener_server, "TOKEN", "")
 
 
@@ -60,17 +61,24 @@ def test_token_authentication(monkeypatch):
     assert good["status"] == "success"
 
 
-def test_dotenv_and_env_token_loading(tmp_path, monkeypatch):
+def test_non_loopback_requires_token_and_env_token(monkeypatch):
     from vulcan_mcp import protocol
 
-    env_file = tmp_path / ".env"
-    env_file.write_text('VULCAN_MCP_TOKEN="dotenv-secret-123"\n', encoding="utf-8")
-    monkeypatch.delenv("VULCAN_MCP_TOKEN", raising=False)
-    monkeypatch.setattr(protocol, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(listener_server, "ENV_FILE", str(env_file))
-    monkeypatch.setattr(listener_server, "TOKEN", None)
+    # 1. Loopback (127.0.0.1 / localhost) is allowed without token by default
+    assert listener_server.is_loopback("127.0.0.1") is True
+    assert listener_server.is_loopback("localhost") is True
+    assert listener_server.is_loopback("0.0.0.0") is False
+    listener_server.validate_binding_security("127.0.0.1", "")
 
-    assert protocol.get_auth_token() == "dotenv-secret-123"
+    # 2. Non-loopback (0.0.0.0) without VULCAN_MCP_TOKEN must refuse to start
+    with pytest.raises(RuntimeError, match="Refusing to bind to non-loopback address"):
+        listener_server.validate_binding_security("0.0.0.0", "")
+
+    # 3. Setting VULCAN_MCP_TOKEN in environment enables auth & permits non-loopback binding
+    monkeypatch.setenv("VULCAN_MCP_TOKEN", "env-random-secret-999")
+    assert protocol.get_auth_token() == "env-random-secret-999"
+    listener_server.validate_binding_security("0.0.0.0", protocol.get_auth_token())
+
     rejected = listener_server.dispatch({"type": "system", "params": {"action": "ping"}})
     assert rejected["status"] == "error"
     accepted = listener_server.dispatch(

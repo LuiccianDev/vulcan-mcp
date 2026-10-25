@@ -97,23 +97,33 @@ Cuando se crea un objeto gráfico temporal en la ventana 3D de Envisage (`tobj =
 
 ## 4. Seguridad y Autenticación por Token (`VULCAN_MCP_TOKEN`)
 
-### Resolución Jerárquica de Configuración
-Tanto `src/vulcan_mcp/protocol.py` como `vulcan_listener/server.py` resuelven `VULCAN_MCP_HOST`, `VULCAN_MCP_PORT` y `VULCAN_MCP_TOKEN` con la siguiente prioridad:
-1. **Variable de Entorno del Sistema (`os.getenv`)**: Si está definida en el entorno del proceso.
-2. **Archivo `.env` en la raíz del repositorio (`vulcan-mcp/.env`)**: Leído dinámicamente en cada petición si la variable de entorno no está presente.
+Siguiendo el diseño de seguridad de herramientas MCP de escritorio como [`nkarasiak/qgis-mcp`](https://github.com/nkarasiak/qgis-mcp):
 
-### Validación Criptográfica en Tiempo Constante
-En `vulcan_listener/server.py`:
+### 1. Comportamiento por Defecto (Loopback `127.0.0.1`)
+* Por defecto, el listener se enlaza exclusivamente a `127.0.0.1` (`localhost`) en el puerto `9877` y la autenticación por token está **desactivada** para facilitar el uso inmediato con `uvx` o `uv run`.
+
+### 2. Activación Opcional del Token (`VULCAN_MCP_TOKEN`)
+* Dado que el listener expone `vulcan_execute_code` (ejecución de Python en el intérprete de Maptek Vulcan), puedes activar un secreto compartido definiendo `VULCAN_MCP_TOKEN` en el entorno donde se inicia Maptek Vulcan y en el bloque `"env"` de tu cliente MCP (`uvx`).
+* Puedes generar un token aleatorio criptográficamente seguro con:
+  ```powershell
+  python -c "import secrets; print(secrets.token_urlsafe(32))"
+  ```
+
+### 3. Regla Estricta de Red No-Loopback (`validate_binding_security`)
+* Si configuras `VULCAN_MCP_HOST` en una dirección IP que **no sea loopback** (cualquier dirección distinta de `127.0.0.1`, `localhost` o `::1`, como `0.0.0.0` o `192.168.x.x`), **`VULCAN_MCP_TOKEN` pasa a ser obligatorio**.
+* El listener ejecutará `validate_binding_security()` al iniciar y **se negará a arrancar (`RuntimeError`)** si `VULCAN_MCP_TOKEN` no está definido, impidiendo exponer ejecución remota de código sin autenticación en la red.
+
+### 4. Validación Criptográfica en Tiempo Constante
+En [`vulcan_listener/server.py`](../vulcan_listener/server.py):
 ```python
 def _check_auth(req):
-    expected = TOKEN or _get_config("VULCAN_MCP_TOKEN", "")
+    expected = _get_expected_token()
     if not expected:
         return True
     provided = str(req.get("token") or "")
     return hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8"))
 ```
 * Se utiliza `hmac.compare_digest` para evitar ataques de temporización (*timing attacks*).
-* Si el token no coincide o no se envía cuando `.env` define `VULCAN_MCP_TOKEN`, el listener rechaza la petición antes de tocar cualquier handler del SDK.
 
 ---
 
