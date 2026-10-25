@@ -23,9 +23,9 @@ flowchart TB
     end
 
     subgraph VUL["Proceso Maptek Vulcan 12 Desktop (Python 3.5.2 Embebido)"]
-        E["Socket Listener (vulcan_listener/server.py)"]
-        F["Framing & Serializador SWIG (vulcan_listener/wire.py)"]
-        G["Handlers por Dominio (vulcan_listener/handlers/*.py)"]
+        E["Socket Listener (plugin/server.py)"]
+        F["Framing & Serializador SWIG (plugin/wire.py)"]
+        G["Handlers por Dominio (plugin/handlers/*.py)"]
         H["SDK C++/SWIG (maptek.vulcan & maptek.vulcan_gui)"]
     end
 
@@ -42,7 +42,7 @@ flowchart TB
 
 ## 2. Protocolo de Transporte Binario (`wire.py` & `protocol.py`)
 
-El canal TCP entre `src/vulcan_mcp/protocol.py` y `vulcan_listener/wire.py` utiliza **Length-Prefixed JSON Framing**:
+El canal TCP entre `src/vulcan_mcp/protocol.py` y `plugin/wire.py` utiliza **Length-Prefixed JSON Framing**:
 
 1. **Cabecera (4 bytes)**: Entero sin signo de 32 bits en orden de red *big-endian* (`struct.Struct("!I")`) que indica la longitud exacta en bytes del payload.
 2. **Payload ($N$ bytes)**: Documento JSON codificado en UTF-8 (tamaño máximo permitido: `64 MB`).
@@ -87,7 +87,7 @@ El canal TCP entre `src/vulcan_mcp/protocol.py` y `vulcan_listener/wire.py` util
 ## 3. Modelo de Ejecución en el Hilo Principal y Memoria SWIG
 
 ### Ejecución Síncrona para Seguridad OpenGL
-En `vulcan_listener/server.py`, las conexiones entrantes se procesan de forma síncrona en el hilo principal del script de Vulcan (`handle_client(conn)`). Esto es indispensable porque `maptek.vulcan_gui` interactúa directamente con el contexto gráfico OpenGL de Envisage, el cual no es *thread-safe* si se invoca desde hilos secundarios.
+En `plugin/server.py`, las conexiones entrantes se procesan de forma síncrona en el hilo principal del script de Vulcan (`handle_client(conn)`). Esto es indispensable porque `maptek.vulcan_gui` interactúa directamente con el contexto gráfico OpenGL de Envisage, el cual no es *thread-safe* si se invoca desde hilos secundarios.
 
 ### Retención de Referencias para `vulcan_gui.temp_object`
 Cuando se crea un objeto gráfico temporal en la ventana 3D de Envisage (`tobj = vg.temp_object(polyline)`), el wrapper SWIG en C++ destruye y borra el dibujo de la pantalla en el instante en que el recolector de basura de Python elimina la variable `tobj`.
@@ -114,7 +114,7 @@ Siguiendo el diseño de seguridad de herramientas MCP de escritorio como [`nkara
 * El listener ejecutará `validate_binding_security()` al iniciar y **se negará a arrancar (`RuntimeError`)** si `VULCAN_MCP_TOKEN` no está definido, impidiendo exponer ejecución remota de código sin autenticación en la red.
 
 ### 4. Validación Criptográfica en Tiempo Constante
-En [`vulcan_listener/server.py`](../vulcan_listener/server.py):
+En [`plugin/server.py`](../plugin/server.py):
 ```python
 def _check_auth(req):
     expected = _get_expected_token()
@@ -129,7 +129,7 @@ def _check_auth(req):
 
 ## 5. Recarga en Caliente (Hot-Reload) sin Reiniciar Vulcan
 
-Cuando se edita cualquier handler dentro de `vulcan_listener/handlers/`, no es necesario cerrar ni reiniciar el script dentro de Maptek Vulcan. Puedes recargar el módulo en memoria enviando a `vulcan_execute_code`:
+Cuando se edita cualquier handler dentro de `plugin/handlers/`, no es necesario cerrar ni reiniciar el script dentro de Maptek Vulcan. Puedes recargar el módulo en memoria enviando a `vulcan_execute_code`:
 
 ```python
 import importlib

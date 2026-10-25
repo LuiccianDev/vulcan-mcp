@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "vulcan_listener"))
+sys.path.insert(0, str(ROOT / "plugin"))
 
 import server as listener_server  # noqa: E402
 import wire  # noqa: E402
@@ -22,9 +22,9 @@ def _isolate_unit_test_token(monkeypatch):
 
 
 def test_python35_compatibility_no_fstrings():
-    """Ensure no f-strings (JoinedStr, added in Python 3.6) exist in vulcan_listener/."""
-    listener_dir = ROOT / "vulcan_listener"
-    for py_file in listener_dir.rglob("*.py"):
+    """Ensure no f-strings (JoinedStr, added in Python 3.6) exist in plugin/."""
+    plugin_dir = ROOT / "plugin"
+    for py_file in plugin_dir.rglob("*.py"):
         source = py_file.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(py_file))
         for node in ast.walk(tree):

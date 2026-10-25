@@ -32,7 +32,7 @@ class VulcanMCPClient:
             sock.close()
             raise ConnectionError(
                 f"Cannot connect to Maptek Vulcan on {self.host}:{self.port} ({exc}). "
-                "Ensure Vulcan Desktop is open and vulcan_listener/server.py is running."
+                "Ensure Vulcan Desktop is open and plugin/server.py is running."
             ) from exc
 
         envelope: dict = {"type": command_type, "params": params or {}}

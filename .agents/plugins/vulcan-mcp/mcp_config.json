@@ -5,7 +5,7 @@
       "args": [
         "run",
         "--directory",
-        "C:\\Users\\DAVID\\Desktop\\WorksSpacesCoding\\vulcan-mcp",
+        "${workspaceFolder}",
         "vulcan-mcp-server"
       ]
     }

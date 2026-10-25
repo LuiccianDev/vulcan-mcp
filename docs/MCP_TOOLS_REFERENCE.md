@@ -37,7 +37,7 @@ Verifica la salud del listener en Vulcan (`127.0.0.1:9877`) e inventaría todos 
     "app": "Maptek Vulcan",
     "python": "3.5.2",
     "vulcan_api": true,
-    "project_dir": "C:\\Users\\DAVID\\Desktop\\vulcanProyects\\Practica_Completa_Final"
+    "project_dir": "C:\\MiningProjects\\CopperDeposit_Project"
   }
   ```
 * **`action="capabilities"`**:

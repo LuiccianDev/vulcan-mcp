@@ -1,7 +1,7 @@
 """Maptek Vulcan 12 MCP Socket Listener (Python 3.5 compatible).
 
 Run from Maptek Vulcan Desktop via:
-    File > Python Script > vulcan_listener/server.py (check 'Run in shell window')
+    File > Python Script > plugin/server.py (check 'Run in shell window')
 """
 import hmac
 import os
