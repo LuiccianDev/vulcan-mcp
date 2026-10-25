@@ -11,6 +11,13 @@ sys.path.insert(0, str(ROOT / "vulcan_listener"))
 import server as listener_server  # noqa: E402
 import wire  # noqa: E402
 from handlers.common import COMMANDS  # noqa: E402
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _isolate_unit_test_token(monkeypatch):
+    """Isolate unit tests from any local .env token unless explicitly tested."""
+    monkeypatch.setattr(listener_server, "TOKEN", "")
 
 
 def test_python35_compatibility_no_fstrings():
@@ -51,6 +58,25 @@ def test_token_authentication(monkeypatch):
         {"type": "system", "params": {"action": "ping"}, "token": "secret-mining-token"}
     )
     assert good["status"] == "success"
+
+
+def test_dotenv_and_env_token_loading(tmp_path, monkeypatch):
+    from vulcan_mcp import protocol
+
+    env_file = tmp_path / ".env"
+    env_file.write_text('VULCAN_MCP_TOKEN="dotenv-secret-123"\n', encoding="utf-8")
+    monkeypatch.delenv("VULCAN_MCP_TOKEN", raising=False)
+    monkeypatch.setattr(protocol, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(listener_server, "ENV_FILE", str(env_file))
+    monkeypatch.setattr(listener_server, "TOKEN", None)
+
+    assert protocol.get_auth_token() == "dotenv-secret-123"
+    rejected = listener_server.dispatch({"type": "system", "params": {"action": "ping"}})
+    assert rejected["status"] == "error"
+    accepted = listener_server.dispatch(
+        {"type": "system", "params": {"action": "ping"}, "token": protocol.get_auth_token()}
+    )
+    assert accepted["status"] == "success"
 
 
 def test_legend_parse_and_update(tmp_path, monkeypatch):

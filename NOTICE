@@ -1,0 +1,23 @@
+Vulcan MCP — Aviso de Autoría y Marcas Registradas (NOTICE)
+===========================================================
+
+Autoría y Derechos de Autor Originales
+--------------------------------------
+Copyright 2026 DAVID (LuiccianDev).
+Repositorio y Arquitectura Original: Vulcan MCP (Integración Model Context Protocol para Maptek Vulcan Desktop).
+
+De conformidad con las Secciones 4(b), 4(c) y 4(d) de la licencia Apache License, Version 2.0 (Apache-2.0):
+1. Cualquier reproducción o redistribución de este proyecto o de obras derivadas (en código fuente o formato objeto/empaquetado) DEBE incluir una copia legible de este archivo NOTICE con la atribución de autoría original de DAVID (LuiccianDev).
+2. Cualquier archivo modificado por terceros DEBE incluir un aviso visible indicando que dicho archivo fue modificado.
+3. De acuerdo con la Sección 6 de Apache-2.0, no se concede permiso para usar el nombre del autor original (DAVID / LuiccianDev) para respaldar o promocionar obras derivadas sin autorización previa por escrito.
+
+Aviso de No Afiliación y Marcas de Terceros
+-------------------------------------------
+Maptek®, Vulcan®, Envisage® y Workbench® son marcas comerciales o marcas registradas de Maptek Pty Ltd.
+
+1. Este proyecto ("Vulcan MCP") es un desarrollo independiente de interoperabilidad creado por DAVID (LuiccianDev)
+   y NO está afiliado, patrocinado ni respaldado oficialmente por Maptek Pty Ltd.
+2. Este repositorio NO incluye, copia ni redistribuye archivos binarios, librerías DLL ni código propietario
+   de Maptek Pty Ltd.
+3. La ejecución en vivo del componente listener (`vulcan_listener/`) requiere que el usuario final posea una
+   instalación y licencia legítima de Maptek Vulcan Desktop en su propio equipo.

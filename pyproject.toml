@@ -13,6 +13,10 @@ name = "vulcan-mcp"
 version = "0.2.0"
 description = "Maptek Vulcan 12 Desktop integration through the Model Context Protocol (MCP)"
 readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "DAVID (LuiccianDev)" },
+]
 requires-python = ">=3.11"
 dependencies = [
     "mcp[cli]>=1.20.0,<3",

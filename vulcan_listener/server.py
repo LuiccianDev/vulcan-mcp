@@ -11,6 +11,8 @@ import traceback
 
 # Ensure package imports work when executed directly by path
 HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(HERE)
+ENV_FILE = os.path.join(ROOT_DIR, ".env")
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
@@ -27,9 +29,29 @@ from handlers import (  # noqa: E402, F401
 )
 from handlers.common import COMMANDS, CommandError  # noqa: E402
 
-HOST = os.environ.get("VULCAN_MCP_HOST", "127.0.0.1").strip() or "127.0.0.1"
-PORT = int(os.environ.get("VULCAN_MCP_PORT", "9877"))
-TOKEN = os.environ.get("VULCAN_MCP_TOKEN", "").strip()
+
+def _get_config(key, default=""):
+    val = os.getenv(key, "").strip()
+    if val:
+        return val
+    if os.path.isfile(ENV_FILE):
+        try:
+            with open(ENV_FILE, "r") as fh:
+                for raw in fh:
+                    line = raw.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    if k.strip() == key:
+                        return v.strip().strip('"').strip("'")
+        except Exception:
+            pass
+    return default
+
+
+HOST = _get_config("VULCAN_MCP_HOST", "127.0.0.1") or "127.0.0.1"
+PORT = int(_get_config("VULCAN_MCP_PORT", "9877") or "9877")
+TOKEN = None
 
 
 def log(msg):
@@ -44,10 +66,11 @@ def log(msg):
 
 
 def _check_auth(req):
-    if not TOKEN:
+    expected = _get_config("VULCAN_MCP_TOKEN", "") if TOKEN is None else TOKEN
+    if not expected:
         return True
     provided = str(req.get("token") or "")
-    return hmac.compare_digest(provided.encode("utf-8"), TOKEN.encode("utf-8"))
+    return hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8"))
 
 
 def dispatch(req):
@@ -97,11 +120,12 @@ def serve_forever():
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind((HOST, PORT))
     sock.listen(5)
+    token_active = bool(_get_config("VULCAN_MCP_TOKEN", ""))
     log("=" * 62)
     log("Vulcan MCP Listener started on {}:{}".format(HOST, PORT))
     log("Working directory: {}".format(os.getcwd()))
     log("Registered domains: {}".format(", ".join(sorted(COMMANDS))))
-    log("Token auth: {}".format("ENABLED" if TOKEN else "DISABLED (local open mode)"))
+    log("Token auth: {}".format("ENABLED (os.getenv / .env)" if token_active else "DISABLED (local open mode)"))
     log("Keep this window open while using your AI client. Ctrl+C to stop.")
     log("=" * 62)
     try:
