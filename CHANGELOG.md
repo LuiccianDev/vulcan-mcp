@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-10-25
 
 ### Added
+- **`git-release` Antigravity Plugin**:
+  - `release-manager`: Dedicated AI persona for Conventional Commits and SemVer releases.
+  - Lifecycle hook (`hooks.json`): Non-blocking `PreInvocation` working tree status check.
+  - Skills: `git-commit` (interactive Conventional Commits) and `versioning-and-release` (SemVer 2.0.0 governance).
+  - Strict guardrails: No silent commits, autonomous Git diff inspection without memory overhead.
 - **Diátaxis Technical Documentation Architecture**:
   - `docs/TUTORIAL_FIRST_STEPS.md`: 15-minute hands-on tutorial for connecting Vulcan 12 Desktop with AI clients.
   - `docs/HOW_TO_GUIDES.md`: 6 problem-oriented recipes (block cutoffs, drillholes, triangulations, CAD polylines, PyVulcan scripting, and modal dialog freezes).
@@ -22,8 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Persistent knowledge graph in `graphify-out/` mapping two-process FastMCP $\leftrightarrow$ Vulcan Python 3.5.2 architecture.
   - Integration of Graphify MCP tools (`query_graph`, `shortest_path`, `god_nodes`) to explore architecture with minimal token consumption.
   - Dedicated operational rules in `.agents/plugins/graphify/rules/AGENTS.md`.
-- **Release & Versioning Skill**:
-  - `.agents/skills/versioning-and-release/SKILL.md`: SemVer 2.0.0 guidelines, version synchronization checklist, and release tagging workflows.
 - **Enriched Package Metadata**:
   - Added PEP 621 author details (`DAVID (LuiccianDev)`), PyPI classifiers, keywords, and repository URLs in `pyproject.toml`.
 
