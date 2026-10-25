@@ -71,7 +71,7 @@ Maneja superficies topográficas y sólidos 3D cerrados.
   * `tri.extent()`, `tri.centroid()`.
 * **Consultas Espaciales**:
   * `tri.get_elevation(x, y)` / `tri.get_elevations(points_xy)`: Cota $Z$ proyectada sobre la superficie.
-  * `tri.point_inside([x, y, z])`: `True` si el punto 3D está dentro del sólido.
+  * `tri.point_inside(x, y, z)`: `True` si el punto 3D $(x, y, z)$ está dentro del sólido.
   * `tri.segment_intersections(p1, p2)`: Puntos de corte entre un segmento $[p_1, p_2]$ y la triangulación.
 * **Geometría**:
   * `tri.get_node(i)`, `tri.get_face(i)`, `tri.get_vertices()`, `tri.get_faces()`.

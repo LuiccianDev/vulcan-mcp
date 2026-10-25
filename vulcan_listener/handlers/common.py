@@ -62,7 +62,11 @@ def resolve(name, suffixes):
 
 
 def list_files(suffixes):
-    return sorted(f for f in os.listdir(project_dir()) if f.lower().endswith(tuple(suffixes)))
+    base = project_dir()
+    return sorted(
+        f for f in os.listdir(base)
+        if f.lower().endswith(tuple(suffixes)) and os.path.isfile(os.path.join(base, f))
+    )
 
 
 def page(items, params, default_limit=50):

@@ -20,6 +20,10 @@ def info(params):
         "faces": tri.n_faces(),
         "extent": to_list(tri.extent()),
         "closed": closed,
+        "consistent": bool(tri.is_consistent()),
+        "crossing": bool(tri.is_crossing()),
+        "ok": bool(tri.is_ok()),
+        "centroid": to_list(tri.centroid())[:3],
     }
     if closed:
         out["volume"] = tri.volume()
@@ -51,7 +55,27 @@ def unload(params):
     return {"removed": os.path.basename(path)}
 
 
-ACTIONS = {"list": list_tris, "info": info, "elevation": elevation, "load": load, "unload": unload}
+def point_inside(params):
+    path = resolve(require(params, "name"), SUFFIXES)
+    points = require(params, "points")
+    tri = vulcan().triangulation(path)
+    return {
+        "name": params["name"],
+        "results": [
+            {"point": p, "inside": bool(tri.point_inside(float(p[0]), float(p[1]), float(p[2])))}
+            for p in points
+        ],
+    }
+
+
+ACTIONS = {
+    "list": list_tris,
+    "info": info,
+    "elevation": elevation,
+    "point_inside": point_inside,
+    "load": load,
+    "unload": unload,
+}
 
 
 @command("triangulation", timeout=45)

@@ -51,10 +51,14 @@ def layer_info(params):
             o = layer.get_object(i)
             entry = {"index": i, "name": _safe(o, "get_name"), "type": _safe(o, "get_type"),
                      "colour": _safe(o, "get_colour"), "description": _safe(o, "get_description")}
-            for key, method in (("points", "num_points"), ("length", "length"), ("closed", "is_closed")):
+            for key, method in (("points", "num_points"), ("length", "length"),
+                                ("closed", "is_closed"), ("planar_area", "planar_area")):
                 value = _safe(o, method)
                 if value is not None:
                     entry[key] = value
+            c = _safe(o, "centroid")
+            if c is not None:
+                entry["centroid"] = to_list(c)[:3]
             objects.append(entry)
         result = page(objects, params, default_limit=20)
         result.update({"dgd": params["dgd"], "layer": params["layer"],

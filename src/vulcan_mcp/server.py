@@ -92,7 +92,7 @@ async def vulcan_block_model(
     annotations=ToolAnnotations(idempotentHint=True),
 )
 async def vulcan_triangulation(
-    action: Literal["list", "info", "elevation", "load", "unload"],
+    action: Literal["list", "info", "elevation", "point_inside", "load", "unload"],
     name: str | None = None,
     points: list[list[float]] | None = None,
 ) -> dict:
@@ -100,8 +100,9 @@ async def vulcan_triangulation(
 
     Actions:
     - list: List all triangulation files in the project.
-    - info: Return node count, face count, 3D bounding box extent, closure state, and volume (requires `name`).
+    - info: Return node count, face count, 3D bounding box extent, closure/consistency/crossing state, centroid, and volume (`name`).
     - elevation: Query surface Z elevation at [[x, y], ...] coordinates (`name`, `points`).
+    - point_inside: Check whether 3D coordinates [[x, y, z], ...] lie inside a closed triangulation solid (`name`, `points`).
     - load: Display triangulation on Vulcan's 3D graphics screen (`name`).
     - unload: Remove triangulation from Vulcan's 3D graphics screen (`name`).
     """
@@ -166,6 +167,7 @@ async def vulcan_drillholes(
     min_value: float | None = None,
     mode: Literal["isis", "dgd"] | None = None,
     save_layer: str | None = None,
+    max_segments: int | None = None,
     limit: int | None = None,
     offset: int | None = None,
 ) -> dict:
@@ -178,7 +180,7 @@ async def vulcan_drillholes(
     - hole: Get collar, survey, assay, and lithology records for a single hole (`db`, `hole`, optional `table`).
     - high_grade: Scan an interval table for the highest-grade intercepts (`db`, `table`, `field`, `min_value`, `limit`).
     - display: Render 3D drillholes in Vulcan's 3D viewport colour-coded by grade (`db`, optional `holes`, `table`, `field`,
-      `limit`, `mode`, `save_layer`).
+      `limit`, `max_segments`, `mode`, `save_layer`).
     - clear_display: Remove rendered 3D drillholes from Vulcan's 3D viewport.
     """
     return await _send(
@@ -193,6 +195,7 @@ async def vulcan_drillholes(
             "min_value": min_value,
             "mode": mode,
             "save_layer": save_layer,
+            "max_segments": max_segments,
             "limit": limit,
             "offset": offset,
         },

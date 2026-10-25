@@ -45,7 +45,7 @@ Al invocar `vulcan_execute_code`, el listener ejecuta sobre **Python 3.5.2 embeb
   * `tri.is_closed()`, `tri.is_consistent()`, `tri.is_crossing()`, `tri.is_ok()`.
   * `tri.volume()`: volumen encerrado si es un sólido cerrado.
   * `tri.get_elevation(x, y)` / `tri.get_elevations(pts)`: interpola cota $Z$ en $(X, Y)$.
-  * `tri.point_inside([x, y, z])`: verifica si un punto 3D está dentro del sólido.
+  * `tri.point_inside(x, y, z)`: verifica si un punto 3D está dentro del sólido.
   * `tri.segment_intersections(p1, p2)`: calcula intersecciones de un segmento 3D (ej. un sondaje) con la malla.
 * **Edición**: `tri.add_node(x, y, z)`, `tri.add_face(i1, i2, i3)`, `tri.save(path)`.
 
