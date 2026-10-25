@@ -126,7 +126,12 @@ def serve_forever():
     log("Vulcan MCP Listener started on {}:{}".format(HOST, PORT))
     log("Working directory: {}".format(os.getcwd()))
     log("Registered domains: {}".format(", ".join(sorted(COMMANDS))))
-    log("Token authentication: {}".format("ENABLED" if token_active else "DISABLED (localhost open mode)"))
+    if token_active:
+        log("Token authentication: ENABLED (HMAC protected)")
+    else:
+        log("Token authentication: DISABLED (localhost open mode)")
+        log("Security Notice: Token is OPTIONAL on localhost, but RECOMMENDED")
+        log("                 as a security wall against unintended script execution.")
     log("Keep this window open while using your AI client. Ctrl+C to stop.")
     log("=" * 62)
     try:

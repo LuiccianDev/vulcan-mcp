@@ -103,11 +103,20 @@ Siguiendo el diseño de seguridad de herramientas MCP de escritorio como [`nkara
 * Por defecto, el listener se enlaza exclusivamente a `127.0.0.1` (`localhost`) en el puerto `9877` y la autenticación por token está **desactivada** para facilitar el uso inmediato con `uvx` o `uv run`.
 
 ### 2. Activación Opcional del Token (`VULCAN_MCP_TOKEN`)
-* Dado que el listener expone `vulcan_execute_code` (ejecución de Python en el intérprete de Maptek Vulcan), puedes activar un secreto compartido definiendo `VULCAN_MCP_TOKEN` en el entorno donde se inicia Maptek Vulcan y en el bloque `"env"` de tu cliente MCP (`uvx`).
-* Puedes generar un token aleatorio criptográficamente seguro con:
+* Dado que el listener expone `vulcan_execute_code` (ejecución de Python en el intérprete de Maptek Vulcan), activar un token levanta una pared de seguridad local.
+* Siguiendo una filosofía sin archivos `.env`, el token se guarda directamente en el perfil de usuario de Windows mediante PowerShell:
   ```powershell
-  python -c "import secrets; print(secrets.token_urlsafe(32))"
+  # Generar y guardar permanentemente en Windows User:
+  $token = python -c "import secrets; print(secrets.token_urlsafe(32))"
+  [System.Environment]::SetEnvironmentVariable('VULCAN_MCP_TOKEN', $token, 'User')
+
+  # Verificar:
+  [System.Environment]::GetEnvironmentVariable('VULCAN_MCP_TOKEN', 'User')
+
+  # Revocar/Eliminar si se desea volver al modo abierto:
+  [System.Environment]::SetEnvironmentVariable('VULCAN_MCP_TOKEN', $null, 'User')
   ```
+* Al estar guardado en Windows, tanto Maptek Vulcan como el proceso `uvx` descargado desde GitHub lo leen automáticamente vía `os.environ`. Alternativamente, los clientes MCP pueden inyectarlo en su bloque `"env"` de configuración JSON.
 
 ### 3. Regla Estricta de Red No-Loopback (`validate_binding_security`)
 * Si configuras `VULCAN_MCP_HOST` en una dirección IP que **no sea loopback** (cualquier dirección distinta de `127.0.0.1`, `localhost` o `::1`, como `0.0.0.0` o `192.168.x.x`), **`VULCAN_MCP_TOKEN` pasa a ser obligatorio**.

@@ -85,13 +85,23 @@ flowchart LR
 
 No necesitas crear ni configurar entornos virtuales manualmente si utilizas [`uv` / `uvx`](https://docs.astral.sh/uv/).
 
-### Paso 1: Iniciar el Plugin dentro de Maptek Vulcan 12
+> [!IMPORTANT]
+> **Regla de Oro: El Orden de Ejecución es Estricto**
+> 1. **PASO 1 (Siempre Primero)**: Se levanta el servidor/plugin dentro de **Maptek Vulcan 12 Desktop**. Esto inicializa el puerto TCP local en `127.0.0.1:9877` y lo deja escuchando.
+> 2. **PASO 2 (Después)**: Se abre o conecta el **Cliente de IA** (Claude Desktop, Cursor, Antigravity, VS Code).
+> 
+> *⚠️ Si intentas conectar tu asistente de IA antes de haber levantado el plugin en Vulcan, el cliente fallará con el mensaje:*
+> `ConnectionError: Cannot connect to Maptek Vulcan on 127.0.0.1:9877. Ensure Vulcan Desktop is open and plugin/server.py is running.`
+
+---
+
+### Paso 1: Iniciar el Servidor/Plugin dentro de Maptek Vulcan 12
 
 1. Abre tu proyecto minero en **Maptek Vulcan 12 Desktop (Envisage)**.
 2. En el menú superior de Vulcan, ve a **File > Python Script** (o teclea `py` en la ventana de comandos).
 3. Selecciona el archivo [`plugin/server.py`](./plugin/server.py).
 4. Marca la casilla **"Run in shell window"** y haz clic en **OK**.
-5. Se abrirá la consola de comandos confirmando:
+5. Se abrirá la consola de comandos de Windows confirmando el servicio:
    ```text
    ==============================================================
    [Vulcan MCP] Vulcan MCP Listener started on 127.0.0.1:9877
@@ -101,54 +111,64 @@ No necesitas crear ni configurar entornos virtuales manualmente si utilizas [`uv
    [Vulcan MCP] Keep this window open while using your AI client. Ctrl+C to stop.
    ==============================================================
    ```
-*(Mantén esta ventana abierta mientras interactúes con tu asistente de IA).*
+
+> [!TIP]
+> **No cierres esta ventana de consola** mientras interactúes con tu asistente de IA. Si la cierras, el socket TCP se detendrá.
 
 ---
 
-### Paso 2: Conectar tu Agente de IA (`uvx` directo desde GitHub)
+### Paso 2: Conectar tu Cliente de IA
 
-#### En Claude Desktop / Cursor / VS Code / Windsurf
-Añade este bloque en la configuración de MCP de tu cliente (`claude_desktop_config.json`, `.cursor/mcp.json` o similar):
+Elige la modalidad que mejor se adapte a tu necesidad:
 
-```json
-{
-  "mcpServers": {
-    "vulcan": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "https://github.com/LuiccianDev/vulcan-mcp/archive/refs/heads/master.zip",
-        "vulcan-mcp-server"
-      ]
+#### Modalidad A: Para Usuarios Finales (con `uvx` directo desde GitHub)
+No requiere clonar el repositorio en otras máquinas. El cliente de IA descarga y ejecuta el servidor MCP al vuelo:
+
+* **En Claude Desktop / Cursor / VS Code / Windsurf**:
+  Añade este bloque en tu archivo `mcpServers` (`claude_desktop_config.json`, `.cursor/mcp.json`, etc.):
+  ```json
+  {
+    "mcpServers": {
+      "vulcan": {
+        "command": "uvx",
+        "args": [
+          "--from",
+          "https://github.com/LuiccianDev/vulcan-mcp/archive/refs/heads/master.zip",
+          "vulcan-mcp-server"
+        ]
+      }
     }
   }
-}
-```
+  ```
 
-#### En Claude Code (CLI)
-```bash
-claude mcp add -s user vulcan -- uvx --from https://github.com/LuiccianDev/vulcan-mcp/archive/refs/heads/master.zip vulcan-mcp-server
-```
+* **En Claude Code (CLI)**:
+  ```bash
+  claude mcp add -s user vulcan -- uvx --from https://github.com/LuiccianDev/vulcan-mcp/archive/refs/heads/master.zip vulcan-mcp-server
+  ```
 
-#### En Google Antigravity
-El plugin en [`.agents/plugins/vulcan-mcp/`](./.agents/plugins/vulcan-mcp) ya viene preconfigurado con `${workspaceFolder}`. Si configuras manualmente en local:
+#### Modalidad B: Para Desarrolladores (con `uv run` en tu copia local)
+Si estás editando el código en tu equipo y deseas que cualquier cambio se refleje al instante (*hot-reload*):
 
-```json
-{
-  "mcpServers": {
-    "vulcan": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--directory",
-        "C:\\path\\to\\vulcan-mcp",
-        "vulcan-mcp-server"
-      ]
+* **En Google Antigravity**:
+  El plugin en [`.agents/plugins/vulcan-mcp/`](./.agents/plugins/vulcan-mcp) ya viene preconfigurado dinámicamente con `${workspaceFolder}`.
+
+* **Configuración Manual Local**:
+  ```json
+  {
+    "mcpServers": {
+      "vulcan": {
+        "command": "uv",
+        "args": [
+          "run",
+          "--directory",
+          "C:\\path\\to\\vulcan-mcp",
+          "vulcan-mcp-server"
+        ]
+      }
     }
   }
-}
-```
-*(Reemplaza `C:\\path\\to\\vulcan-mcp` o `/path/to/vulcan-mcp` por la ruta donde clonaste el repositorio).*
+  ```
+  *(Reemplaza `C:\\path\\to\\vulcan-mcp` o `/path/to/vulcan-mcp` por la ruta absoluta de tu repositorio clonado).*
 
 ---
 
@@ -182,13 +202,87 @@ Una vez conectado tu agente, puedes pedirle análisis geológicos y mineros dire
 
 ---
 
-## 🔒 Seguridad y Autenticación por Token (`VULCAN_MCP_TOKEN`)
+## ⚙️ Configuración y Variables de Entorno (Configuration)
 
-Siguiendo el diseño de seguridad de herramientas MCP de escritorio como [`nkarasiak/qgis-mcp`](https://github.com/nkarasiak/qgis-mcp):
+Tanto el plugin dentro de Maptek Vulcan como el servidor MCP leen automáticamente las variables de entorno del sistema (`os.environ`). Si defines las variables en Windows una sola vez, **ambos extremos las reconocen automáticamente** sin necesidad de repetir configuraciones en archivos JSON.
 
-1. **Modo abierto en Localhost (`127.0.0.1`)**: Por defecto, la autenticación por token está desactivada en la interfaz loopback, permitiendo conexión instantánea con `uvx`.
-2. **Activación de Token (`VULCAN_MCP_TOKEN`)**: Para habilitar un secreto compartido, genera un token con `python -c "import secrets; print(secrets.token_urlsafe(32))"`, defínelo como variable de entorno en Vulcan antes de iniciar `plugin/server.py` y pásalo en el bloque `"env"` de tu cliente MCP (`uvx`).
-3. **Bloqueo Obligatorio Non-Loopback**: Si configuras `VULCAN_MCP_HOST` en una dirección que no sea loopback (`!= 127.0.0.1`), el plugin **se niega a arrancar a menos que `VULCAN_MCP_TOKEN` esté definido**, protegiendo la ejecución de código en redes locales.
+### Tabla de Variables Disponibles
+
+| Variable | Por Defecto | Tipo | Descripción | ¿Cuándo se utiliza? |
+| :--- | :--- | :--- | :--- | :--- |
+| **`VULCAN_MCP_HOST`** | `127.0.0.1` | String | Dirección IP donde el plugin abre el socket TCP y el cliente MCP se conecta. | Opcional. Cámbiala si ejecutas Vulcan en una máquina o contenedor diferente. |
+| **`VULCAN_MCP_PORT`** | `9877` | Entero | Puerto TCP para la transmisión de mensajes binarios `uint32`. | Opcional. Cámbiala si el puerto 9877 está en uso por otra aplicación. |
+| **`VULCAN_MCP_TOKEN`** | `""` (Desactivado) | String | Secreto compartido autenticado mediante HMAC en tiempo constante. | **Obligatorio** si `VULCAN_MCP_HOST` no es loopback (`!= 127.0.0.1`). Opcional en localhost. |
+
+---
+
+## 🔐 Autenticación y Seguridad (Authentication & Security)
+
+### ¿Por qué el Token es Opcional pero Altamente Recomendado?
+
+> [!TIP]
+> **El Token como Pared de Seguridad (Security Wall)**:
+> * **Para empezar rápido en local**: No necesitas configurar ningún token. El socket escucha en `127.0.0.1` en modo abierto y puedes interactuar al instante (*plug-and-play*).
+> * **Como Pared de Protección**: Dado que la herramienta `vulcan_execute_code` permite ejecutar código Python dentro de Maptek Vulcan, configurar `VULCAN_MCP_TOKEN` levanta una pared de seguridad local. Esto garantiza que **únicamente tu asistente de IA autorizado** pueda ejecutar acciones en tu sesión abierta de Vulcan, previniendo que cualquier otro script o proceso local aleatorio envíe instrucciones al socket.
+
+---
+
+### ¿Cómo configurar el Token de Seguridad? (Sin archivos `.env`)
+
+El proyecto adopta una **filosofía Cero `.env`**: no necesitas crear ni mantener archivos de texto con contraseñas que puedan commitearse por error a GitHub. El token se gestiona a nivel de sistema operativo en Windows.
+
+#### Método 1: Permanente en Windows vía PowerShell (Recomendado)
+Abre PowerShell y ejecuta:
+```powershell
+# 1. Generar y guardar el token permanentemente en tu usuario de Windows:
+$token = python -c "import secrets; print(secrets.token_urlsafe(32))"
+[System.Environment]::SetEnvironmentVariable('VULCAN_MCP_TOKEN', $token, 'User')
+
+# 2. Verificar que quedó guardado correctamente:
+[System.Environment]::GetEnvironmentVariable('VULCAN_MCP_TOKEN', 'User')
+
+# 3. (Opcional) Si en el futuro deseas borrarlo y volver al modo abierto:
+[System.Environment]::SetEnvironmentVariable('VULCAN_MCP_TOKEN', $null, 'User')
+```
+> [!NOTE]
+> Al guardarlo con el alcance `'User'`, queda registrado en tu perfil de Windows. Esto permite que:
+> * **Maptek Vulcan** lea el token automáticamente al iniciar `plugin/server.py`.
+> * **Tu cliente MCP con `uvx`** descargado desde GitHub herede el token automáticamente sin tener que escribirlo en ningún archivo JSON.
+
+#### Método 2: Mediante la Interfaz Gráfica de Windows (GUI)
+1. Presiona `Win + R`, escribe `sysdm.cpl` y pulsa **Enter**.
+2. Ve a la pestaña **Opciones avanzadas** y haz clic en **Variables de entorno...**.
+3. En la sección superior (**Variables de usuario**), pulsa **Nueva...**.
+4. Ingresa:
+   * **Nombre de variable**: `VULCAN_MCP_TOKEN`
+   * **Valor de variable**: Tu clave secreta (ej. `mi-clave-secreta-2026`).
+5. Acepta y cierra los cuadros de diálogo.
+
+#### Método 3: Inyección Local en el JSON del Cliente (Bloque `"env"`)
+Si prefieres no tocar las variables de Windows y pasar el token exclusivamente a un cliente MCP específico:
+```json
+{
+  "mcpServers": {
+    "vulcan": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "https://github.com/LuiccianDev/vulcan-mcp/archive/refs/heads/master.zip",
+        "vulcan-mcp-server"
+      ],
+      "env": {
+        "VULCAN_MCP_TOKEN": "mi-clave-secreta-2026"
+      }
+    }
+  }
+}
+```
+
+---
+
+### Regla Estricta de Red Non-Loopback
+Siguiendo las mejores prácticas de seguridad de [`nkarasiak/qgis-mcp`](https://github.com/nkarasiak/qgis-mcp):
+* Si configuras `VULCAN_MCP_HOST` en una dirección que **no sea loopback** (por ejemplo `0.0.0.0` o `192.168.x.x`), el plugin **se niega a iniciar (`RuntimeError`)** a menos que `VULCAN_MCP_TOKEN` esté definido, impidiendo exponer ejecución remota de código en la red sin contraseña.
 
 ---
 
