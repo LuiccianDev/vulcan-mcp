@@ -1,4 +1,4 @@
-name: Publish Release
+name: Release & Publish to PyPI
 
 "on":
   push:
@@ -6,16 +6,27 @@ name: Publish Release
       - 'v*'
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Tag name to release (e.g., v0.3.1)'
+      target_env:
+        description: 'Target PyPI repository (pypi or testpypi)'
         required: true
+        default: 'pypi'
+        type: choice
+        options:
+          - pypi
+          - testpypi
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: write        # For GitHub Release creation & asset upload
+  id-token: write        # Mandatory for PyPI Trusted Publishing (OIDC)
+  attestations: write    # Mandatory for PEP 740 Cryptographic Attestation
 
 jobs:
-  build-and-release:
-    name: Build Packages & Create Release
+  build:
+    name: Build Packages & Attest Provenance
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -33,7 +44,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Build Distribution Packages (wheel + sdist)
+      - name: Build distribution packages (wheel + sdist)
         run: uv build
 
       - name: Generate Checksums
@@ -42,7 +53,33 @@ jobs:
           sha256sum * > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
-      - name: Publish GitHub Release
+      - name: Generate PEP 740 Artifact Attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: "dist/*"
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-packages
+          path: dist/*
+          retention-days: 1
+
+  github-release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-packages
+          path: dist
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -52,3 +89,30 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+
+  pypi-publish:
+    name: Publish to PyPI (${{ github.event.inputs.target_env || 'pypi' }})
+    needs: [build, github-release]
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.target_env || 'pypi' }}
+      url: ${{ (github.event.inputs.target_env == 'testpypi') && 'https://test.pypi.org/p/luiccian-vulcan-mcp' || 'https://pypi.org/p/luiccian-vulcan-mcp' }}
+    steps:
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-packages
+          path: dist
+
+      - name: Publish to Production PyPI
+        if: ${{ (github.event.inputs.target_env || 'pypi') == 'pypi' }}
+        run: uv publish dist/*
+
+      - name: Publish to TestPyPI
+        if: ${{ github.event.inputs.target_env == 'testpypi' }}
+        run: uv publish dist/* --publish-url https://test.pypi.org/legacy/
