@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+
+---
+
+## [0.3.3] - 2026-11-07
+### Added
+- **Dynamic Host, Port & Token Ergonomics**:
+  - Aligned `VulcanMCPClient` constructor with `AutoCADGatewayClient` from `autocad-mcp` with full parameter support: `VulcanMCPClient(host=None, port=None, token=None, timeout=TIMEOUT_DEFAULT)`.
+  - Added type-safe port casting (`int | str`) and automatic fallback to environment variables (`VULCAN_MCP_HOST`, `VULCAN_MCP_PORT`, `VULCAN_MCP_TOKEN`).
+  - Added unit test `test_vulcan_mcp_client_dynamic_configuration` verifying custom parameters and environment variable fallback.
+
+### Changed
+- **PyPI Package Documentation Cleanliness**:
+  - Removed internal developer CI/CD workflows and release cadence sections from `README.md` to prevent clutter on PyPI.
+  - Relocated maintainer release guidelines and version synchronization documentation to `CONTRIBUTING.md`.
+  - Added quickstart guidance for configuring custom ports dynamically via `"env": {"VULCAN_MCP_PORT": "9878"}` in AI client JSON configurations when port 9877 is in use.
+
 ---
 
 ## [0.3.2] - 2026-11-07

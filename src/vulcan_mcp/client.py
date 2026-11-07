@@ -14,16 +14,28 @@ from vulcan_mcp.protocol import (
 
 
 class VulcanMCPClient:
-    def __init__(self, host: str | None = None, port: int | None = None):
+    def __init__(
+        self,
+        host: str | None = None,
+        port: int | str | None = None,
+        token: str | None = None,
+        timeout: float = TIMEOUT_DEFAULT,
+    ):
         self.host = host or get_host()
-        self.port = port or get_port()
+        if port is not None:
+            self.port = int(port)
+        else:
+            self.port = get_port()
+        self.token = token if token is not None else get_auth_token()
+        self.default_timeout = timeout
 
     def send_command(
         self,
         command_type: str,
         params: dict | None = None,
-        timeout: float = TIMEOUT_DEFAULT,
+        timeout: float | None = None,
     ) -> dict:
+        actual_timeout = timeout if timeout is not None else self.default_timeout
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         sock.settimeout(3.0)
@@ -37,17 +49,17 @@ class VulcanMCPClient:
             ) from exc
 
         envelope: dict = {"type": command_type, "params": params or {}}
-        token = get_auth_token()
-        if token:
-            envelope["token"] = token
+        active_token = self.token or get_auth_token()
+        if active_token:
+            envelope["token"] = active_token
 
-        sock.settimeout(timeout)
+        sock.settimeout(actual_timeout)
         try:
             sock.sendall(pack_message(envelope))
             resp = unpack_message(sock)
         except socket.timeout as exc:
             raise CommandTimeout(
-                f"Vulcan timed out after {timeout}s on '{command_type}'. "
+                f"Vulcan timed out after {actual_timeout}s on '{command_type}'. "
                 "Check if Vulcan Desktop is showing a modal dialog (e.g., 'No design database is currently open')."
             ) from exc
         finally:

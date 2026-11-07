@@ -199,6 +199,40 @@ def test_drillhole_desurvey_and_colour():
     assert drillholes._grade_to_vulcan_colour(0.1) == 5
 
 
+def test_vulcan_mcp_client_dynamic_configuration(monkeypatch):
+    """Test VulcanMCPClient constructor ergonomics and environment variable fallback."""
+    from vulcan_mcp.client import VulcanMCPClient
+    from vulcan_mcp.protocol import DEFAULT_HOST, DEFAULT_PORT
+
+    # 1. Default initialization
+    client = VulcanMCPClient()
+    assert client.host == DEFAULT_HOST
+    assert client.port == DEFAULT_PORT
+    assert client.token is None
+    assert client.default_timeout == 30.0
+
+    # 2. Explicit constructor parameters matching AutoCAD MCP
+    custom = VulcanMCPClient(
+        host="192.168.1.10",
+        port="9878",
+        token="custom-token-xyz",
+        timeout=45.0,
+    )
+    assert custom.host == "192.168.1.10"
+    assert custom.port == 9878
+    assert custom.token == "custom-token-xyz"
+    assert custom.default_timeout == 45.0
+
+    # 3. Dynamic fallback to environment variables
+    monkeypatch.setenv("VULCAN_MCP_HOST", "127.0.0.2")
+    monkeypatch.setenv("VULCAN_MCP_PORT", "9999")
+    monkeypatch.setenv("VULCAN_MCP_TOKEN", "env-secret-token")
+    env_client = VulcanMCPClient()
+    assert env_client.host == "127.0.0.2"
+    assert env_client.port == 9999
+    assert env_client.token == "env-secret-token"
+
+
 def test_version_synchronization():
     """Ensure pyproject.toml, vulcan_mcp.__version__, and plugin.json stay synchronized."""
     import json
@@ -219,4 +253,4 @@ def test_version_synchronization():
     pkg_version = vulcan_mcp.__version__
 
     assert pkg_version == pyproject_version == plugin_version
-    assert pkg_version == "0.3.2"
+    assert pkg_version == "0.3.3"
