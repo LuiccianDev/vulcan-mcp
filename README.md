@@ -1,14 +1,12 @@
 <div align="center">
   <h1>Vulcan MCP</h1>
-  <a href="https://github.com/LuiccianDev/vulcan-mcp">
-    <img src="./assets/readme-logo.jpg" alt="Vulcan MCP Logo"  />
-  </a>
-
+  <p><b>Model Context Protocol (MCP) server connecting Maptek Vulcan 12 Desktop with AI Agents</b></p>
 
   <p align="center">
-    <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=for-the-badge&logo=apache" alt="License: Apache 2.0" /></a>
-    <a href="./pyproject.toml"><img src="https://img.shields.io/badge/MCP_Server-Python_3.11+-3776AB.svg?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+" /></a>
-    <a href="./docs/MAPTEK_PYTHON_SDK.md"><img src="https://img.shields.io/badge/Vulcan_12-Python_3.5.2-E65100.svg?style=for-the-badge&logo=cplusplus&logoColor=white" alt="Vulcan SDK" /></a>
+    <a href="https://pypi.org/project/luiccian-vulcan-mcp/"><img src="https://img.shields.io/pypi/v/luiccian-vulcan-mcp.svg?style=for-the-badge&logo=pypi&logoColor=white" alt="PyPI: luiccian-vulcan-mcp" /></a>
+    <a href="https://github.com/LuiccianDev/vulcan-mcp/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=for-the-badge&logo=apache" alt="License: Apache 2.0" /></a>
+    <a href="https://github.com/LuiccianDev/vulcan-mcp/blob/master/pyproject.toml"><img src="https://img.shields.io/badge/MCP_Server-Python_3.11+-3776AB.svg?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+" /></a>
+    <a href="https://github.com/LuiccianDev/vulcan-mcp/blob/master/docs/MAPTEK_PYTHON_SDK.md"><img src="https://img.shields.io/badge/Vulcan_12-Python_3.5.2-E65100.svg?style=for-the-badge&logo=cplusplus&logoColor=white" alt="Vulcan SDK" /></a>
     <a href="https://modelcontextprotocol.io/"><img src="https://img.shields.io/badge/Protocol-MCP_2.x-8A2BE2.svg?style=for-the-badge" alt="MCP 2.x" /></a>
     <a href="https://docs.astral.sh/uv/"><img src="https://img.shields.io/badge/uvx-Astral-purple.svg?style=for-the-badge" alt="uv / uvx" /></a>
   </p>
@@ -23,14 +21,14 @@
 
   <p align="center">
     <b>
-      <a href="#-quick-start-in-2-steps" >Quick Start</a> •
+      <a href="#-quick-start-in-2-steps">Quick Start</a> •
       <a href="#-key-capabilities">Capabilities</a> •
       <a href="#-the-9-master-tools-catalog">MCP Tools</a> •
       <a href="#-practical--simple-examples">Practical Examples</a> •
-      <a href="./docs/TUTORIAL_FIRST_STEPS.md">Tutorial</a> •
-      <a href="./docs/HOW_TO_GUIDES.md">How-To Guides</a> •
-      <a href="./docs">Documentation</a> •
-      <a href="./CONTRIBUTING.md">Contributing</a>
+      <a href="https://github.com/LuiccianDev/vulcan-mcp/blob/master/docs/TUTORIAL_FIRST_STEPS.md">Tutorial</a> •
+      <a href="https://github.com/LuiccianDev/vulcan-mcp/blob/master/docs/HOW_TO_GUIDES.md">How-To Guides</a> •
+      <a href="https://github.com/LuiccianDev/vulcan-mcp/tree/master/docs">Documentation</a> •
+      <a href="https://github.com/LuiccianDev/vulcan-mcp/blob/master/CONTRIBUTING.md">Contributing</a>
     </b>
   </p>
 
@@ -87,41 +85,6 @@ Seamlessly query block models (`.bmf`), audit 3D triangulations and solids (`.00
 
 ---
 
-## Project Structure
-
-The repository uses a decoupled architecture to guarantee 100% compatibility between Vulcan's embedded legacy interpreter and modern AI clients:
-
-```text
-vulcan-mcp/
-├── assets/                         # Visual identity and branding
-├── plugin/                         # Internal plugin for Maptek Vulcan 12 (Python 3.5.2)
-│   ├── server.py                   # Synchronous TCP socket listener in Vulcan's main thread
-│   ├── wire.py                     # Custom JSON serializer for SWIG/C++ types & uint32 protocol
-│   └── handlers/                   # Mining domain controllers (block models, drillholes, CAD, etc.)
-│
-├── src/vulcan_mcp/                 # External MCP Server (Python 3.11+ / FastMCP)
-│   ├── server.py                   # The 9 Master Compound Tools exposed to AI agents
-│   ├── client.py                   # Asynchronous TCP client communicating with Vulcan plugin
-│   └── protocol.py                 # Binary framing network protocol & environment config
-│
-├── docs/                           # Diátaxis Documentation Center
-│   ├── README.md                   # Documentation index and Diátaxis matrix
-│   ├── TUTORIAL_FIRST_STEPS.md     # Tutorial: 15-minute hands-on guide from 0 to 100
-│   ├── HOW_TO_GUIDES.md            # How-To Guides: Step-by-step recipes for mining tasks
-│   ├── MCP_TOOLS_REFERENCE.md      # Full parameter reference for all 9 MCP tools
-│   ├── MAPTEK_PYTHON_SDK.md        # Maptek Vulcan Python SDK & SDK 2.0 mapping catalog
-│   ├── VULCAN_FILE_FORMATS.md      # Technical specification of Vulcan file formats
-│   └── ARCHITECTURE_AND_SECURITY.md# In-depth architecture, memory management & security
-│
-├── .agents/plugins/vulcan-mcp/     # Packaged plugin for Google Antigravity
-├── tests/                          # 3-Layer Automated Test Suite
-├── LICENSE                         # Apache License 2.0
-├── NOTICE                          # Legal notices and Maptek Pty Ltd trademarks
-└── pyproject.toml                  # Packaging, Ruff, Mypy, and Pytest configuration
-```
-
----
-
 ## Communication Architecture
 
 Maptek Vulcan 12 Desktop embeds **Python 3.5.2** tightly linked to its C++/SWIG graphics engine (`maptek.vulcan`). Modern MCP servers require **Python 3.11+**. 
@@ -130,7 +93,7 @@ The system bridges both worlds across two processes using a local TCP loopback s
 
 ```mermaid
 flowchart LR
-    A["AI Agent<br/>(Antigravity / Claude / Cursor)"] <-->|"MCP (Stdio)<br/>uvx vulcan-mcp-server"| B["MCP Server<br/>(src/vulcan_mcp)"]
+    A["AI Agent<br/>(Claude / Cursor / Antigravity)"] <-->|"MCP (Stdio)<br/>uvx luiccian-vulcan-mcp"| B["MCP Server<br/>(src/vulcan_mcp)"]
     B <-->|"TCP 127.0.0.1:9877<br/>uint32 framing + JSON"| C["Vulcan Plugin<br/>(plugin/server.py)"]
     C <-->|"C++ / SWIG Bindings"| D["Maptek Vulcan 12 Desktop<br/>(maptek.vulcan & vulcan_gui)"]
 ```
@@ -449,21 +412,6 @@ The project includes automated testing infrastructure organized across 3 validat
     </tr>
   </tbody>
 </table>
-
-### Code Coverage Metrics
-
-```powershell
-uv run --no-sync pytest tests/test_vulcan_mcp.py tests/test_mcp_tools.py tests/test_agent_eval.py -v --cov=src/vulcan_mcp
-```
-
-| Module | Statements | Coverage | Status |
-| :--- | :---: | :---: | :---: |
-| `src/vulcan_mcp/__init__.py` | 1 | **100%** | ✅ Optimal |
-| `src/vulcan_mcp/server.py` | 54 | **93%** | ✅ Optimal |
-| `src/vulcan_mcp/protocol.py` | 39 | **87%** | ✅ Optimal |
-| `src/vulcan_mcp/client.py` | 30 | **79%** | ✅ Optimal |
-| **Total `vulcan_mcp` Package** | **124** | **88%** | **✅ 22/22 Tests Passing** |
-
 ---
 
 ## 🔄 CI/CD & Automated Workflows

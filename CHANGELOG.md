@@ -12,6 +12,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.2] - 2026-11-07
+### Changed
+- **PyPI & Documentation Streamlining**:
+  - Removed broken local image reference (`./assets/readme-logo.jpg`) that failed to render on PyPI.
+  - Added official PyPI release badge with direct links.
+  - Converted relative header links to canonical GitHub URLs to eliminate 404 errors on PyPI.
+  - Streamlined `README.md` by eliminating the 33-line ASCII file tree and internal statement coverage table.
+  - Updated architecture diagrams to highlight `uvx luiccian-vulcan-mcp`.
+
+---
+
 ## [0.3.1] - 2026-11-07
 ### Added
 - **PyPI Distribution Package (`luiccian-vulcan-mcp`)**:
