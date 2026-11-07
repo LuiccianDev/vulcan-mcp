@@ -47,6 +47,7 @@ WORK & MACHINERY       ▼                              ▼
   4. *Measure planar bench areas and digitize CAD polylines (`.dgd.isis`).*
   5. *Execute Python automation scripts and hot-reload handlers (`vulcan_execute_code`).*
   6. *Diagnose and resolve freezes caused by modal dialog popups in Vulcan Desktop.*
+  7. *Manage versions, create release tags, and publish automatically to PyPI (`luiccian-vulcan-mcp`).*
 
 ---
 
