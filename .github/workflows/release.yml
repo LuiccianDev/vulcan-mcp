@@ -10,12 +10,16 @@ name: Publish Release
         description: 'Tag name to release (e.g., v0.3.1)'
         required: true
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
 jobs:
   build-and-release:
-    name: Build Packages & Create Release
+    name: Build Packages & Create GitHub Release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
