@@ -46,7 +46,7 @@ def calculate_next_version(current: str, bump_type: str) -> str:
     if not m:
         raise ValueError("Current version '{}' does not match SemVer MAJOR.MINOR.PATCH".format(current))
 
-    major, minor, patch, extra = int(m.group(1)), int(m.group(2)), int(m.group(3)), m.group(4)
+    major, minor, patch = int(m.group(1)), int(m.group(2)), int(m.group(3))
 
     if bump_type.lower() == "patch":
         return "{}.{}.{}".format(major, minor, patch + 1)
