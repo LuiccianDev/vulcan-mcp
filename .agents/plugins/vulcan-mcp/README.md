@@ -1,41 +1,41 @@
 # Maptek Vulcan MCP Plugin (Google Antigravity)
 
-Plugin nativo de **Google Antigravity** ubicado en `.agents/plugins/vulcan-mcp/` para integrar **Maptek Vulcan 12 Desktop** directamente con el entorno de agentes.
+Native **Google Antigravity** plugin located in `.agents/plugins/vulcan-mcp/` to integrate **Maptek Vulcan 12 Desktop** directly into agentic AI environments.
 
 ---
 
-## Estructura del Plugin
+## Plugin Structure
 
 ```text
 .agents/plugins/vulcan-mcp/
-├── plugin.json                         # Manifiesto oficial del plugin
-├── mcp_config.json                     # Lanzador automático del servidor MCP vía uv
-├── hooks.json                          # Hook PreInvocation que verifica el puerto TCP 9877
-├── README.md                           # Este documento
+├── plugin.json                         # Official plugin manifest
+├── mcp_config.json                     # Automated MCP server launcher via uv
+├── hooks.json                          # PreInvocation hook verifying TCP port 9877
+├── README.md                           # This document
 ├── agents/
-│   └── mining-geologist.md             # Agente Especialista en Geología y Planificación Minera
+│   └── mining-geologist.md             # Resource Geologist & Mine Planning Specialist Agent
 ├── rules/
-│   └── AGENTS.md                       # Reglas permanentes activas mientras el plugin está habilitado
+│   └── AGENTS.md                       # Persistent rules active when plugin is enabled
 └── skills/
-    ├── vulcan-tools-catalog/SKILL.md   # Catálogo de las 9 Herramientas Maestras MCP
-    ├── vulcan-file-formats/SKILL.md    # Especificación de formatos .bmf, .00t, .dgd.isis, .dhd.isis, .scd
-    ├── vulcan-python-sdk/SKILL.md      # Referencia de maptek.vulcan, maptek.vulcan_gui y mapteksdk 2.0
-    └── vulcan-workflow/SKILL.md        # Flujos guiados de auditoría, cubicación y sondajes
+    ├── vulcan-tools-catalog/SKILL.md   # 9 MCP Master Tools Catalog
+    ├── vulcan-file-formats/SKILL.md    # Format specifications (.bmf, .00t, .dgd.isis, .dhd.isis, .scd)
+    ├── vulcan-python-sdk/SKILL.md      # SDK mapping (maptek.vulcan, maptek.vulcan_gui, mapteksdk 2.0)
+    └── vulcan-workflow/SKILL.md        # Guided mining workflows (audits, estimation, drillholes)
 ```
 
 ---
 
-## Componentes Incluidos
+## Included Components
 
-1. **Servidor MCP (`mcp_config.json`)**:
-   * Registra el servidor `vulcan` ejecutando `uv run --directory <proyecto> vulcan-mcp-server`.
-   * Lee automáticamente `VULCAN_MCP_TOKEN` desde el sistema o desde el archivo `.env` de la raíz del proyecto.
-2. **Agente Personalizado (`agents/mining-geologist.md`)**:
-   * **Identificador**: `mining-geologist` (*Vulcan Mining Specialist*).
-   * **Capacidades**: Acceso completo a las 9 herramientas maestras de Vulcan y a las 4 skills especializadas.
-3. **4 Skills de Divulgación Progresiva (`skills/*/SKILL.md`)**:
-   * Se cargan bajo demanda solo cuando la tarea lo requiere para optimizar el consumo de tokens de contexto.
-4. **Hook de Salud (`hooks.json`)**:
-   * Antes de cada invocación (`PreInvocation`), comprueba de forma no bloqueante si el socket `127.0.0.1:9877` de Maptek Vulcan está en línea (`ONLINE` / `OFFLINE`).
-5. **Reglas Operativas (`rules/AGENTS.md`)**:
-   * Garantiza el uso de `uv run`, límites seguros de renderizado 3D (`<= 300` segmentos), soporte de columnas ISIS en español (`BUZ`, `DESDE`) y detección de ventanas modales en Vulcan.
+1. **MCP Server Configuration (`mcp_config.json`)**:
+   * Registers the `vulcan` server executing `uv run --directory ${workspaceFolder} vulcan-mcp-server`.
+   * Automatically reads `VULCAN_MCP_TOKEN` from the operating system environment if configured.
+2. **Specialized Custom Agent (`agents/mining-geologist.md`)**:
+   * **Identifier**: `mining-geologist` (*Vulcan Mining Specialist*).
+   * **Capabilities**: Full access to the 9 Vulcan master compound tools and the 4 specialized skills.
+3. **4 Progressive Disclosure Skills (`skills/*/SKILL.md`)**:
+   * Loaded on demand only when a task requires deep domain context to optimize LLM context window tokens.
+4. **Health Check Hook (`hooks.json`)**:
+   * Prior to each invocation (`PreInvocation`), performs a non-blocking check to verify whether Maptek Vulcan's TCP socket `127.0.0.1:9877` is `ONLINE` or `OFFLINE`.
+5. **Operational Rules (`rules/AGENTS.md`)**:
+   * Enforces tool execution via `uv run`, safe 3D graphics rendering thresholds ($\le 300$ segments), bilingual ISIS database column support (`COLLARS/COLLARES`, `BUZ/DIP`, `FROM/DESDE`), and modal dialog awareness.
