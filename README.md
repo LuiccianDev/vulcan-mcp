@@ -221,6 +221,7 @@ If you are developing or modifying the codebase and want hot-reloading:
       }
     }
   }
+  ```
 
 ---
 
@@ -462,6 +463,70 @@ uv run --no-sync pytest tests/test_vulcan_mcp.py tests/test_mcp_tools.py tests/t
 | `src/vulcan_mcp/protocol.py` | 39 | **87%** | ✅ Optimal |
 | `src/vulcan_mcp/client.py` | 30 | **79%** | ✅ Optimal |
 | **Total `vulcan_mcp` Package** | **124** | **88%** | **✅ 22/22 Tests Passing** |
+
+---
+
+## 🔄 CI/CD & Automated Workflows
+
+The repository uses coordinated, path-filtered GitHub Actions to ensure maximum speed, security, and reproducibility on Windows:
+
+| Workflow | Trigger | Runner | Responsibilities |
+| :--- | :--- | :--- | :--- |
+| **`CI & Code Quality`** (`ci.yml`) | Pull requests & pushes targeting `src/**`, `plugin/**`, `tests/**`, `pyproject.toml`, `uv.lock` | `windows-latest` | • Ruff linter & format enforcement<br>• Mypy strict type checking<br>• AST check ensuring 100% Python 3.5.2 compatibility in `plugin/`<br>• Pytest matrix on Python 3.11 & 3.12 |
+| **`Security Analysis`** (`security.yml`) | Weekly schedule & PRs touching core dependencies | `ubuntu-latest` | • GitHub CodeQL semantic security scan<br>• `pip-audit` vulnerability scanning on frozen production dependencies |
+| **`Release Pipeline`** (`release.yml`) | Tag creation (`v*`) | `ubuntu-latest` | • Builds sdist and wheel with `uv build`<br>• Generates SHA-256 cryptographic checksums (`checksums.txt`)<br>• Creates official GitHub Release with release notes and binary assets |
+| **`Publish to PyPI`** (`publish-pypi.yml`) | Release published (`release: [published]`) or manual dispatch | `ubuntu-latest` | • OIDC Trusted Publishing (keyless, zero static tokens)<br>• PEP 740 Cryptographic Build Provenance Attestation<br>• Direct publish to [PyPI (`luiccian-vulcan-mcp`)](https://pypi.org/p/luiccian-vulcan-mcp) |
+
+---
+
+## 🏷️ Release Cadence, Versioning & Tag Creation
+
+We strictly adhere to [Semantic Versioning (SemVer 2.0.0)](https://semver.org/):
+* **MAJOR (`X.0.0`)**: Incompatible API breaks or major protocol overhaul.
+* **MINOR (`0.X.0`)**: Backwards-compatible new MCP tools, handlers, or capabilities.
+* **PATCH (`0.0.X`)**: Bug fixes, dependency bumps, performance optimizations, and documentation updates.
+
+### 5-Target Synchronized Versioning (`scripts/bump_version.py`)
+
+To prevent version discrepancies between metadata files, use the unified version bumper:
+
+```powershell
+# Preview changes without modifying files:
+python scripts/bump_version.py patch --dry-run
+
+# Execute version bump (patch, minor, major, or explicit version):
+python scripts/bump_version.py patch
+python scripts/bump_version.py minor
+python scripts/bump_version.py 0.3.1
+```
+
+The script automatically synchronizes all 5 points in a single atomic pass:
+1. `pyproject.toml` (`[project] version = "..."`)
+2. `src/vulcan_mcp/__init__.py` (`__version__ = "..."`)
+3. `.agents/plugins/vulcan-mcp/plugin.json` (`"version": "..."`)
+4. `uv.lock` (root package version updated)
+5. `CHANGELOG.md` (moves `[Unreleased]` into `[X.Y.Z] - YYYY-MM-DD` and creates a fresh empty `[Unreleased]` section).
+
+### How to Cut a Release & Publish to PyPI
+
+```powershell
+# 1. Update version and changelog
+python scripts/bump_version.py 0.3.1
+
+# 2. Commit the version bump
+git add .
+git commit -m "chore(release): bump version to 0.3.1"
+
+# 3. Create an annotated Git tag
+git tag -a v0.3.1 -m "Release v0.3.1: Windows CI, PyPI packaging & English docs"
+
+# 4. Push branch and tag to GitHub
+git push origin master
+git push origin v0.3.1
+```
+
+> [!NOTE]
+> Pushing the tag `v*` immediately triggers `release.yml`. Once the GitHub Release is published, `publish-pypi.yml` automatically builds, attests, and publishes the package to PyPI without manual token handling.
 
 ---
 

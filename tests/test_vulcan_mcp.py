@@ -219,4 +219,4 @@ def test_version_synchronization():
     pkg_version = vulcan_mcp.__version__
 
     assert pkg_version == pyproject_version == plugin_version
-    assert pkg_version == "0.3.0"
+    assert pkg_version == "0.3.1"

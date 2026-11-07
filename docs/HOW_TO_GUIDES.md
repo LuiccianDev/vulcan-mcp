@@ -12,6 +12,7 @@
 4. [How to calculate planar bench areas and create CAD polylines](#4-how-to-calculate-planar-bench-areas-and-create-cad-polylines)
 5. [How to run Python scripts and hot-reload handlers inside Vulcan](#5-how-to-run-python-scripts-and-hot-reload-handlers-inside-vulcan)
 6. [How to diagnose and resolve modal dialog freezes in Vulcan Desktop](#6-how-to-diagnose-and-resolve-modal-dialog-freezes-in-vulcan-desktop)
+7. [How to manage versions, create release tags, and publish to PyPI](#7-how-to-manage-versions-create-release-tags-and-publish-to-pypi)
 
 ---
 
@@ -298,3 +299,53 @@ Maptek Vulcan 12 Desktop uses native Windows MFC dialogs. When an operation trig
 1. **Look at the Vulcan screen:** Check whether Vulcan/Envisage has a dialog popup open.
 2. **Click OK / Cancel:** Once the modal is dismissed, the Python thread resumes instantly.
 3. **Retry the command:** Ask your AI assistant to retry the command. It will execute normally.
+
+---
+
+## 7. How to manage versions, create release tags, and publish to PyPI
+
+### Problem
+You need to release a new version of `luiccian-vulcan-mcp` to PyPI and GitHub Releases, keeping all version files, the changelog, and cryptographic attestations synchronized without manual errors.
+
+### Prerequisites
+* Ensure PyPI Trusted Publishing is registered at [https://pypi.org/manage/account/publishing/](https://pypi.org/manage/account/publishing/):
+  - **PyPI Project Name**: `luiccian-vulcan-mcp`
+  - **Owner**: `LuiccianDev`
+  - **Repository**: `vulcan-mcp`
+  - **Workflow**: `publish-pypi.yml`
+  - **Environment**: `pypi`
+
+### Step 1: Preview or bump the version
+Use [`scripts/bump_version.py`](../scripts/bump_version.py) to atomically synchronize `pyproject.toml`, `src/vulcan_mcp/__init__.py`, `.agents/plugins/vulcan-mcp/plugin.json`, `uv.lock`, and `CHANGELOG.md`:
+
+```powershell
+# Dry-run preview:
+python scripts/bump_version.py patch --dry-run
+
+# Execute bump:
+python scripts/bump_version.py patch
+# or explicit version:
+python scripts/bump_version.py 0.3.1
+```
+
+### Step 2: Commit the version bump
+```powershell
+git add .
+git commit -m "chore(release): bump version to 0.3.1"
+```
+
+### Step 3: Create and push an annotated Git tag
+```powershell
+git tag -a v0.3.1 -m "Release v0.3.1: Windows CI, PyPI packaging & English docs"
+git push origin master
+git push origin v0.3.1
+```
+
+### Step 4: Automated CI/CD Execution
+1. **GitHub Release (`release.yml`)**: Triggered immediately by `git push origin v*`. Builds wheel and sdist, generates SHA-256 checksums, and publishes the GitHub Release.
+2. **PyPI Publishing (`publish-pypi.yml`)**: Triggered upon GitHub Release publication. Uses OIDC Trusted Publishing and PEP 740 provenance attestation to upload the package to [PyPI](https://pypi.org/p/luiccian-vulcan-mcp).
+3. **End-User Execution**: End users can now immediately execute:
+   ```bash
+   uvx luiccian-vulcan-mcp
+   ```
+
