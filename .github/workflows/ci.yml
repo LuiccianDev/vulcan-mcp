@@ -1,0 +1,112 @@
+name: CI & Code Quality
+
+"on":
+  push:
+    branches: [master]
+    paths:
+      - 'src/**'
+      - 'plugin/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'src/**'
+      - 'plugin/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint & Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Ruff Linter
+        run: uv run --no-sync ruff check .
+
+      - name: Ruff Formatter Check
+        run: uv run --no-sync ruff format --check .
+
+      - name: Mypy Type Checking
+        run: uv run --no-sync mypy src/
+
+      - name: Python 3.5 AST Compatibility (plugin/)
+        run: |
+          python -c "
+          import ast, pathlib, sys
+          violations = []
+          for p in pathlib.Path('plugin').rglob('*.py'):
+              tree = ast.parse(p.read_text(encoding='utf-8'), filename=str(p))
+              for node in ast.walk(tree):
+                  if isinstance(node, ast.JoinedStr):
+                      violations.append(f'{p}:{getattr(node, \"lineno\", \"?\")}')
+          if violations:
+              print('Found Python 3.6+ f-strings in plugin/ (prohibited for Vulcan 12 Python 3.5.2):', file=sys.stderr)
+              for v in violations:
+                  print(f'  - {v}', file=sys.stderr)
+              sys.exit(1)
+          print('AST check passed: 100% Python 3.5 compatible in plugin/.')
+          "
+
+  test:
+    name: Test Suite (${{ matrix.os }} - Python ${{ matrix.python-version }})
+    needs: quality
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run Unit & Mock Harness Tests
+        run: |
+          uv run --no-sync pytest tests/test_vulcan_mcp.py tests/test_mcp_tools.py tests/test_agent_eval.py -v --cov=src/vulcan_mcp --cov-report=xml
+
+      - name: Upload Coverage Artifact
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-report
+          path: coverage.xml
+          retention-days: 7
