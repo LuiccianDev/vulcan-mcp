@@ -202,6 +202,7 @@ def test_drillhole_desurvey_and_colour():
 def test_version_synchronization():
     """Ensure pyproject.toml, vulcan_mcp.__version__, and plugin.json stay synchronized."""
     import json
+    import re
     import tomllib
 
     import vulcan_mcp
@@ -219,5 +220,5 @@ def test_version_synchronization():
     pkg_version = vulcan_mcp.__version__
 
     assert pkg_version == pyproject_version == plugin_version
-    import re
     assert re.match(r"^\d+\.\d+\.\d+", pkg_version)
+
