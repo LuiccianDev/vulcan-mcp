@@ -62,9 +62,7 @@ Add the following configuration to `claude_desktop_config.json` or `.cursor/mcp.
     "vulcan": {
       "command": "uvx",
       "args": [
-        "--from",
-        "https://github.com/LuiccianDev/vulcan-mcp/archive/refs/heads/master.zip",
-        "vulcan-mcp-server"
+        "luiccian-vulcan-mcp"
       ]
     }
   }

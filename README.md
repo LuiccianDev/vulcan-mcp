@@ -188,9 +188,7 @@ No repository cloning required. The AI client pulls and runs the MCP server on t
       "vulcan": {
         "command": "uvx",
         "args": [
-          "--from",
-          "https://github.com/LuiccianDev/vulcan-mcp/archive/refs/heads/master.zip",
-          "vulcan-mcp-server"
+          "luiccian-vulcan-mcp"
         ]
       }
     }
@@ -199,7 +197,7 @@ No repository cloning required. The AI client pulls and runs the MCP server on t
 
 * **In Claude Code (CLI)**:
   ```bash
-  claude mcp add -s user vulcan -- uvx --from https://github.com/LuiccianDev/vulcan-mcp/archive/refs/heads/master.zip vulcan-mcp-server
+  claude mcp add -s user vulcan -- uvx luiccian-vulcan-mcp
   ```
 
 #### Mode B: For Developers (with `uv run` on a local clone)

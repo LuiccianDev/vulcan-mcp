@@ -1,14 +1,14 @@
 [project]
-name = "vulcan-mcp"
+name = "luiccian-vulcan-mcp"
 version = "0.3.0"
 description = "Vulcan 12 integration through the Model Context Protocol (MCP)"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [
-    { name = "LuiccianDev"},
+    { name = "Luiccian", email = "luicciandev@gmail.com" }
 ]
 maintainers = [
-    { name = "LuiccianDev"},
+    { name = "LuiccianDev", email = "luicciandev@gmail.com" }
 ]
 keywords = [
     "mcp",
@@ -47,7 +47,9 @@ Issues = "https://github.com/LuiccianDev/vulcan-mcp/issues"
 Changelog = "https://github.com/LuiccianDev/vulcan-mcp/releases"
 
 [project.scripts]
+luiccian-vulcan-mcp = "vulcan_mcp.server:main"
 vulcan-mcp-server = "vulcan_mcp.server:main"
+vulcan-mcp = "vulcan_mcp.server:main"
 
 [build-system]
 requires = ["hatchling"]
