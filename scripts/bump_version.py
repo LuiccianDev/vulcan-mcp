@@ -31,6 +31,7 @@ INIT_FILE = ROOT / "src" / "vulcan_mcp" / "__init__.py"
 PLUGIN_JSON_FILE = ROOT / ".agents" / "plugins" / "vulcan-mcp" / "plugin.json"
 UV_LOCK_FILE = ROOT / "uv.lock"
 CHANGELOG_FILE = ROOT / "CHANGELOG.md"
+TEST_FILE = ROOT / "tests" / "test_vulcan_mcp.py"
 
 
 def get_current_version() -> str:
@@ -108,6 +109,20 @@ def update_uv_lock(new_version: str, dry_run: bool = False) -> None:
         UV_LOCK_FILE.write_text(new_text, encoding="utf-8")
 
 
+def update_test_py(new_version: str, dry_run: bool = False) -> None:
+    if not TEST_FILE.exists():
+        return
+    text = TEST_FILE.read_text(encoding="utf-8")
+    new_text = re.sub(
+        r'(?m)assert pkg_version == "[^"]+"',
+        'assert pkg_version == "{}"'.format(new_version),
+        text,
+        count=1,
+    )
+    if not dry_run:
+        TEST_FILE.write_text(new_text, encoding="utf-8")
+
+
 def update_changelog(new_version: str, dry_run: bool = False) -> None:
     if not CHANGELOG_FILE.exists():
         return
@@ -153,9 +168,13 @@ def main() -> int:
     update_uv_lock(next_ver, dry_run=args.dry_run)
     print("  [x] uv.lock -> {}".format(next_ver))
 
+    update_test_py(next_ver, dry_run=args.dry_run)
+    print("  [x] tests/test_vulcan_mcp.py -> {}".format(next_ver))
+
     if not args.no_changelog:
         update_changelog(next_ver, dry_run=args.dry_run)
         print("  [x] CHANGELOG.md (injected ## [{}] - {})".format(next_ver, datetime.date.today().isoformat()))
+
 
     print("\n{}Successfully synchronized all 5 version targets to {}!".format(prefix, next_ver))
     if not args.dry_run:
