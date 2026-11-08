@@ -245,12 +245,7 @@ def test_version_synchronization():
         pyproject_data = tomllib.load(f)
     pyproject_version = pyproject_data["project"]["version"]
 
-    plugin_json_path = ROOT / ".agents/plugins/vulcan-mcp/plugin.json"
-    with open(plugin_json_path, "r", encoding="utf-8") as f:
-        plugin_data = json.load(f)
-    plugin_version = plugin_data["version"]
-
     pkg_version = vulcan_mcp.__version__
 
-    assert pkg_version == pyproject_version == plugin_version
+    assert pkg_version == pyproject_version
     assert pkg_version == "0.3.4"

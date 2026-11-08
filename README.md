@@ -175,10 +175,8 @@ No repository cloning required. The AI client pulls and runs the MCP server on t
 #### Mode B: For Developers (with `uv run` on a local clone)
 If you are developing or modifying the codebase and want hot-reloading:
 
-* **In Google Antigravity**:
-  The plugin in [`.agents/plugins/vulcan-mcp/`](./.agents/plugins/vulcan-mcp) is already preconfigured dynamically with `${workspaceFolder}`.
-
 * **Manual Local Configuration**:
+  To connect directly to your local clone:
   ```json
   {
     "mcpServers": {

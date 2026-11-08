@@ -39,9 +39,9 @@ When bumping the version, **all three files below must be updated simultaneously
 
 | Target File | Setting / Variable | Example |
 | :--- | :--- | :--- |
-| **`pyproject.toml`** | `[project] version = "..."` | `version = "0.3.0"` |
-| **`src/vulcan_mcp/__init__.py`** | `__version__ = "..."` | `__version__ = "0.3.0"` |
-| **`.agents/plugins/vulcan-mcp/plugin.json`** | `"version": "..."` | `"version": "0.3.0"` |
+| **`pyproject.toml`** | `[project] version = "..."` | `version = "0.3.4"` |
+| **`src/vulcan_mcp/__init__.py`** | `__version__ = "..."` | `__version__ = "0.3.4"` |
+| **`uv.lock`** | `version = "..."` | `version = "0.3.4"` |
 
 ---
 
