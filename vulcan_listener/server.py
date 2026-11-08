@@ -1,7 +1,7 @@
 """Maptek Vulcan 12 MCP Socket Listener (Python 3.5 compatible).
 
 Run from Maptek Vulcan Desktop via:
-    File > Python Script > plugin/server.py (check 'Run in shell window')
+    File > Python Script > vulcan_listener/server.py (check 'Run in shell window')
 """
 import hmac
 import os
@@ -82,8 +82,12 @@ def dispatch(req):
     params = req.get("params") or {}
     entry = COMMANDS.get(cmd)
     if entry is None:
-        return {"status": "error", "message": "Unknown command '{}'. Registered: {}".format(
-            cmd, ", ".join(sorted(COMMANDS)))}
+        return {
+            "status": "error",
+            "message": "Unknown command '{}'. Registered: {}".format(
+                cmd, ", ".join(sorted(COMMANDS))
+            ),
+        }
     fn, _ = entry
     try:
         result = fn(params)
@@ -91,8 +95,11 @@ def dispatch(req):
     except CommandError as exc:
         return {"status": "error", "message": str(exc)}
     except Exception as exc:
-        return {"status": "error", "message": "{}: {}".format(type(exc).__name__, exc),
-                "traceback": traceback.format_exc()}
+        return {
+            "status": "error",
+            "message": "{}: {}".format(type(exc).__name__, exc),
+            "traceback": traceback.format_exc(),
+        }
 
 
 def handle_client(conn):

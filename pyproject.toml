@@ -1,6 +1,6 @@
 [project]
 name = "luiccian-vulcan-mcp"
-version = "0.3.3"
+version = "0.3.4"
 description = "Vulcan 12 integration through the Model Context Protocol (MCP)"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -58,6 +58,14 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/vulcan_mcp"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src/vulcan_mcp",
+    "/README.md",
+    "/LICENSE",
+    "/pyproject.toml",
+]
+
 [tool.uv]
 package = true
 [dependency-groups]
@@ -72,11 +80,16 @@ dev = [
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+extend-exclude = [
+    "*.md",
+    "vulcan_listener",
+    "scripts",
+]
+
+[tool.ruff.format]
 exclude = [
-    ".git",
-    ".venv",
-    ".pytest_cache",
-    "plugin",
+    "*.md",
+    "vulcan_listener",
     "scripts",
 ]
 

@@ -7,7 +7,7 @@ name: Security & Vulnerability Analysis
     branches: [master]
     paths:
       - 'src/**'
-      - 'plugin/**'
+      - 'vulcan_listener/**'
       - 'pyproject.toml'
       - 'uv.lock'
       - '.github/workflows/security.yml'
@@ -15,7 +15,7 @@ name: Security & Vulnerability Analysis
     branches: [master]
     paths:
       - 'src/**'
-      - 'plugin/**'
+      - 'vulcan_listener/**'
       - 'pyproject.toml'
       - 'uv.lock'
       - '.github/workflows/security.yml'

@@ -15,14 +15,14 @@ flowchart LR
     subgraph Host["Host Machine (Python 3.11+)"]
         AI["AI Assistant Client"] <--> Server["FastMCP Server (src/vulcan_mcp/)"]
     end
-    Server <-->|"Local TCP: 127.0.0.1:9877\n(Binary uint32 framing)"| Plugin["Vulcan 12 Plugin (plugin/)\nEmbedded Python 3.5.2"]
+    Server <-->|"Local TCP: 127.0.0.1:9877\n(Binary uint32 framing)"| Listener["Vulcan 12 Listener (vulcan_listener/)\nEmbedded Python 3.5.2"]
     subgraph Vulcan["Maptek Vulcan 12 Desktop"]
-        Plugin <--> Envisage["Envisage 3D Engine & Mining SDK"]
+        Listener <--> Envisage["Envisage 3D Engine & Mining SDK"]
     end
 ```
 
 * **External MCP Server (`src/vulcan_mcp/`)**: Runs in **Python 3.11+** using `FastMCP` and Pydantic v2. Modern Python idioms, type annotations, and async patterns are encouraged here.
-* **Internal Plugin (`plugin/`)**: Executes inside Maptek Vulcan 12's embedded **Python 3.5.2** interpreter on Vulcan's main thread to preserve the Envisage OpenGL graphics context.
+* **Internal Listener (`vulcan_listener/`)**: Executes inside Maptek Vulcan 12's embedded **Python 3.5.2** interpreter on Vulcan's main thread to preserve the Envisage OpenGL graphics context.
 
 ---
 
@@ -50,11 +50,11 @@ uv sync
 ## 3. Core Development Guardrails
 
 > [!CAUTION]
-> ### Strict Python 3.5.2 Compatibility in `plugin/`
-> The code inside `plugin/` (including all files in `plugin/handlers/`) runs directly in Vulcan 12's embedded Python 3.5.2 interpreter.
-> - **Strictly Prohibited**: Do **NOT** use f-strings (`f"..."`) inside `plugin/`. Use `.format()` or `%` formatting.
-> - **Strictly Prohibited**: Do **NOT** use function type hints or variable annotations inside `plugin/`.
-> - AST tests (`tests/test_vulcan_mcp.py`) will automatically fail your pull request if an f-string is detected in `plugin/`.
+> ### Strict Python 3.5.2 Compatibility in `vulcan_listener/`
+> The code inside `vulcan_listener/` (including all files in `vulcan_listener/handlers/`) runs directly in Vulcan 12's embedded Python 3.5.2 interpreter.
+> - **Strictly Prohibited**: Do **NOT** use f-strings (`f"..."`) inside `vulcan_listener/`. Use `.format()` or `%` formatting.
+> - **Strictly Prohibited**: Do **NOT** use function type hints or variable annotations inside `vulcan_listener/`.
+> - AST tests (`tests/test_vulcan_mcp.py`) will automatically fail your pull request if an f-string is detected in `vulcan_listener/`.
 
 ### Zero `.env` Philosophy
 Do **not** create `.env` files in this repository. Authentication tokens are managed securely at the Windows OS environment level:
