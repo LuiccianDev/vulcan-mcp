@@ -234,8 +234,7 @@ def test_vulcan_mcp_client_dynamic_configuration(monkeypatch):
 
 
 def test_version_synchronization():
-    """Ensure pyproject.toml, vulcan_mcp.__version__, and plugin.json stay synchronized."""
-    import json
+    """Ensure pyproject.toml and vulcan_mcp.__version__ stay synchronized."""
     import tomllib
 
     import vulcan_mcp
