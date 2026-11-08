@@ -11,6 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+---
+
+## [0.3.4] - 2026-11-08
+### Changed
+- **Architectural Renaming to `vulcan_listener`**:
+  - Renamed embedded Vulcan Desktop component from ambiguous `plugin/` to descriptive `vulcan_listener/`.
+  - Updated launch entry point to `File > Python Script > vulcan_listener/server.py`.
+  - Updated all test runners, CI workflows, and documentation paths.
+- **Strict `src/` Packaging Boundaries**:
+  - Configured `[tool.hatch.build.targets.sdist]` in `pyproject.toml` to exclusively bundle `src/vulcan_mcp/` and core metadata (`README.md`, `LICENSE`, `pyproject.toml`), eliminating unnecessary non-code directories from the source distribution.
+  - Updated Ruff exclude paths to include `vulcan_listener`.
+- **Agent Plugin & Documentation Cleanup**:
+  - Removed obsolete `.agents/plugins/vulcan-mcp/mcp_config.json` and `hooks.json`.
+  - Updated Antigravity agent definition (`mining-geologist.md`) and workflows to reference `vulcan_listener/server.py`.
+  - Ensured 100% English documentation consistency across all files.
+
 ---
 
 ## [0.3.3] - 2026-11-07

@@ -1,6 +1,6 @@
 """Mock Maptek Vulcan 12 listener server for offline testing and evaluation.
 
-Implements the uint32 big-endian wire protocol used by Vulcan MCP and plugin/server.py.
+Implements the uint32 big-endian wire protocol used by Vulcan MCP and vulcan_listener/server.py.
 Allows offline testing of FastMCP tools and agent workflows without Maptek Vulcan Desktop.
 """
 

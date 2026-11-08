@@ -22,5 +22,5 @@ Maptek®, Vulcan®, Envisage®, and Workbench® are trademarks or registered tra
    and is NOT officially affiliated with, sponsored by, or endorsed by Maptek Pty Ltd.
 2. This repository DOES NOT include, redistribute, or package proprietary binaries, DLLs, or source code
    belonging to Maptek Pty Ltd.
-3. Live execution of the embedded listener component (`plugin/`) requires the end-user to possess a valid,
+3. Live execution of the embedded listener component (`vulcan_listener/`) requires the end-user to possess a valid,
    licensed installation of Maptek Vulcan Desktop on their host machine.

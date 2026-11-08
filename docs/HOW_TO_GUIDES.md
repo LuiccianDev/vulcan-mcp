@@ -255,7 +255,7 @@ Response:
 ## 5. How to run Python scripts and hot-reload handlers inside Vulcan
 
 ### Problem
-You want to test custom `maptek.vulcan` routines or modify the Python modules in `plugin/handlers/` without restarting Vulcan Desktop or the socket listener.
+You want to test custom `maptek.vulcan` routines or modify the Python modules in `vulcan_listener/handlers/` without restarting Vulcan Desktop or the socket listener.
 
 ### Solution
 
@@ -275,7 +275,7 @@ MCP Call:
 ```
 
 #### Step 2: Hot-reload a modified handler module
-If you modified `plugin/handlers/block_models.py` in your code editor:
+If you modified `vulcan_listener/handlers/block_models.py` in your code editor:
 ```json
 {
   "tool": "vulcan_execute_code",

@@ -35,7 +35,7 @@ Always format branch names using kebab-case with standard prefixes:
 
 ## 3. Interactive Initiation Protocol (Starting Work)
 
-When the user requests a new change or feature (e.g., *"quiero cambiar X"*, *"agrega una función para Y"*):
+When the user requests a new change or feature (e.g., *"I want to change X"*, *"add a function for Y"*):
 
 ### Step 1: Detect Work Scope & Propose Branch
 Formulate a concise branch name and confirm with the user before touching code:
@@ -112,13 +112,13 @@ gh pr merge --squash --delete-branch
 ## 6. Practical Example: User Interaction Flow
 
 ```
-User: "Quiero agregar una función para exportar drillholes a formato CSV"
+User: "I want to add a function to export drillholes to CSV format"
 
 Assistant (triggers branch-workflow):
-1. Proposes branch: "Entendido. Para proteger 'master', crearemos la rama: feat/drillhole-csv-export"
+1. Proposes branch: "Understood. To protect 'master', we will create the branch: feat/drillhole-csv-export"
 2. Executes: git checkout -b feat/drillhole-csv-export
 3. Implements code & tests on the branch.
 4. Validates: uv run --no-sync pytest
 5. Commits: feat(drillholes): add CSV export action
-6. Prompts user: "Trabajo completado y verificado en la rama. ¿Deseas hacer el merge a master o abrir un Pull Request?"
+6. Prompts user: "Work completed and verified on the branch. Would you like to merge into master or open a Pull Request?"
 ```

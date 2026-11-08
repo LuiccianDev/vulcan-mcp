@@ -94,7 +94,7 @@ The system bridges both worlds across two processes using a local TCP loopback s
 ```mermaid
 flowchart LR
     A["AI Agent<br/>(Claude / Cursor / Antigravity)"] <-->|"MCP (Stdio)<br/>uvx luiccian-vulcan-mcp"| B["MCP Server<br/>(src/vulcan_mcp)"]
-    B <-->|"TCP 127.0.0.1:9877<br/>uint32 framing + JSON"| C["Vulcan Plugin<br/>(plugin/server.py)"]
+    B <-->|"TCP 127.0.0.1:9877<br/>uint32 framing + JSON"| C["Vulcan Listener<br/>(vulcan_listener/server.py)"]
     C <-->|"C++ / SWIG Bindings"| D["Maptek Vulcan 12 Desktop<br/>(maptek.vulcan & vulcan_gui)"]
 ```
 
@@ -106,18 +106,18 @@ You don't need to manually create or configure virtual environments if you have 
 
 > [!IMPORTANT]
 > **Strict Execution Order:**
-> 1. **STEP 1 (Always First):** Start the listener plugin inside **Maptek Vulcan 12 Desktop**. This opens and binds local TCP port `127.0.0.1:9877`.
+> 1. **STEP 1 (Always First):** Start the socket listener inside **Maptek Vulcan 12 Desktop**. This opens and binds local TCP port `127.0.0.1:9877`.
 > 2. **STEP 2 (Afterwards):** Connect your **AI Client** (Claude Desktop, Cursor, Antigravity, VS Code).
 > 
-> *⚠️ Connecting your AI assistant before starting the plugin in Vulcan will result in a `ConnectionError`.*
+> *⚠️ Connecting your AI assistant before starting the listener in Vulcan will result in a `ConnectionError`.*
 
 ---
 
-### Step 1: Start the Plugin inside Maptek Vulcan 12
+### Step 1: Start the Socket Listener inside Maptek Vulcan 12
 
 1. Open your mining project in **Maptek Vulcan 12 Desktop (Envisage)**.
 2. In Vulcan's top menu, go to **File > Python Script** (or type `py` in Vulcan's command window).
-3. Select the file [`plugin/server.py`](./plugin/server.py).
+3. Select the file [`vulcan_listener/server.py`](./vulcan_listener/server.py).
 4. Check the box **"Run in shell window"** and click **OK**.
 5. A Windows console window will open confirming the listener is running:
 
@@ -405,7 +405,7 @@ The project includes automated testing infrastructure organized across 3 validat
       <td align="center"><b>Layer 1</b></td>
       <td>Unit & AST</td>
       <td><code>uv run --no-sync pytest tests/test_vulcan_mcp.py -v</code></td>
-      <td>Validates strict Python 3.5.2 compatibility (f-string prohibition in <code>plugin/</code>), domain registration, and token isolation.</td>
+      <td>Validates strict Python 3.5.2 compatibility (f-string prohibition in <code>vulcan_listener/</code>), domain registration, and token isolation.</td>
     </tr>
     <tr>
       <td align="center"><b>Layer 2</b></td>
@@ -428,7 +428,7 @@ The project includes automated testing infrastructure organized across 3 validat
 Contributions, bug reports, and suggestions are warmly welcomed! Please read our [**Contributing Guide (CONTRIBUTING.md)**](./CONTRIBUTING.md) to learn about:
 * Setting up the local development environment with `uv`.
 * Feature branch workflows (`feat/*`, `fix/*`) to keep `master` stable.
-* Strict Python 3.5.2 compatibility in `plugin/` (no f-strings).
+* Strict Python 3.5.2 compatibility in `vulcan_listener/` (no f-strings).
 * Release automation and synchronized version bumping (`scripts/bump_version.py`).
 * Conventional Commits and submitting Pull Requests with GitHub CLI (`gh`).
 

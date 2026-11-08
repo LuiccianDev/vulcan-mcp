@@ -19,7 +19,7 @@ These rules govern how AI assistants interact with Git, format commits, bump ver
 ---
 
 ## 3. Autonomous Git Diff Inspection (Zero Memory Overhead)
-* When the user asks for a release (e.g. *"prepara una nueva versión"*), the assistant MUST NOT ask the user to summarize what was done.
+* When the user asks for a release (e.g. *"prepare a new release"*), the assistant MUST NOT ask the user to summarize what was done.
 * Instead, the assistant automatically inspects Git history:
   ```powershell
   $latestTag = git describe --tags --abbrev=0

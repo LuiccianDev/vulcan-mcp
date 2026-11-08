@@ -5,7 +5,7 @@ name: CI & Code Quality
     branches: [master]
     paths:
       - 'src/**'
-      - 'plugin/**'
+      - 'vulcan_listener/**'
       - 'tests/**'
       - 'pyproject.toml'
       - 'uv.lock'
@@ -14,7 +14,7 @@ name: CI & Code Quality
     branches: [master]
     paths:
       - 'src/**'
-      - 'plugin/**'
+      - 'vulcan_listener/**'
       - 'tests/**'
       - 'pyproject.toml'
       - 'uv.lock'
@@ -55,22 +55,22 @@ jobs:
       - name: Mypy Type Checking
         run: uv run --no-sync mypy src/
 
-      - name: Python 3.5 AST Compatibility (plugin/)
+      - name: Python 3.5 AST Compatibility (vulcan_listener/)
         shell: python
         run: |
           import ast, pathlib, sys
           violations = []
-          for p in pathlib.Path('plugin').rglob('*.py'):
+          for p in pathlib.Path('vulcan_listener').rglob('*.py'):
               tree = ast.parse(p.read_text(encoding='utf-8'), filename=str(p))
               for node in ast.walk(tree):
                   if isinstance(node, ast.JoinedStr):
                       violations.append(f'{p}:{getattr(node, "lineno", "?")}')
           if violations:
-              print('Found Python 3.6+ f-strings in plugin/ (prohibited for Vulcan 12 Python 3.5.2):', file=sys.stderr)
+              print('Found Python 3.6+ f-strings in vulcan_listener/ (prohibited for Vulcan 12 Python 3.5.2):', file=sys.stderr)
               for v in violations:
                   print(f'  - {v}', file=sys.stderr)
               sys.exit(1)
-          print('AST check passed: 100% Python 3.5 compatible in plugin/.')
+          print('AST check passed: 100% Python 3.5 compatible in vulcan_listener/.')
 
   test:
     name: Test Suite (Windows - Python ${{ matrix.python-version }})

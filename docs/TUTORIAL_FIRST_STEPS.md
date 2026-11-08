@@ -27,7 +27,7 @@ The bridge component is a synchronous socket listener running inside Vulcan's em
 2. In the top menu, navigate to:  
    **File > Python Script** (or type `py` in Vulcan's command window).
 3. In the file picker, select:  
-   `plugin/server.py`
+   `vulcan_listener/server.py`
 4. **Crucial:** Check the box **"Run in shell window"** and click **OK**.
 5. A Windows console window will appear displaying:
 
