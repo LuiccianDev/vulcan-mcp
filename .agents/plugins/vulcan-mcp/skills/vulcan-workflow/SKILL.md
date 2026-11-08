@@ -86,7 +86,9 @@ When executing custom automation code via `vulcan_execute_code`:
 2. **Dynamic Handler Hot-Reload**:
    * Handlers in `vulcan_listener/handlers/` can be refreshed on the fly without restarting Vulcan:
      ```python
-     import importlib, handlers.block_models
+     import importlib
+     import handlers.block_models
+
      importlib.reload(handlers.block_models)
      ```
 3. **Graphics Context Protection**:

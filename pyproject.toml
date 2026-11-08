@@ -80,10 +80,15 @@ dev = [
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+extend-exclude = [
+    "*.md",
+    "vulcan_listener",
+    "scripts",
+]
+
+[tool.ruff.format]
 exclude = [
-    ".git",
-    ".venv",
-    ".pytest_cache",
+    "*.md",
     "vulcan_listener",
     "scripts",
 ]
