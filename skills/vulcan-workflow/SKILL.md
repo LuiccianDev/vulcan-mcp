@@ -1,11 +1,11 @@
 ---
 name: vulcan-workflow
-description: Guided mining workflows for interacting with Maptek Vulcan 12 Desktop via Vulcan MCP (project audits, block model estimation, drillholes, and 3D screenshots).
+description: Guided mining workflows for interacting with Maptek Vulcan 12 Desktop via Vulcan MCP (project audits, block model estimation, drillholes, CAD validation, and 3D screenshots).
 ---
 
 # Mining Workflows with Vulcan MCP
 
-This skill provides step-by-step procedures to interact safely, dynamically, and efficiently with Maptek Vulcan 12 Desktop.
+This skill provides step-by-step procedures to interact safely, dynamically, and efficiently with Maptek Vulcan 12 Desktop across common geological and mine planning scenarios.
 
 ---
 
@@ -69,9 +69,9 @@ To answer questions regarding volume, tonnage, grades, or cutoffs:
 ## 4. CAD Bench Design & 3D Visual Validation
 
 1. **Inspect Design Layers**:
-   * Call `vulcan_design` with `action="list_layers"` and `action="get_polygons"` to audit bench toes, crests, and haul roads.
+   * Call `vulcan_design` with `action="list_layers"` and `action="layer_info"` to audit bench toes, crests, and haul roads.
 2. **Calculate Planar Areas**:
-   * Call `vulcan_design` with `action="polygon_area"` to determine surface area ($m^2$) and 2D centroids.
+   * Check `planar_area_m2` and `centroid` returned in `layer_info` to evaluate bench surface dimensions.
 3. **Multimodal Visual Validation**:
    * Call `vulcan_screenshot` with `quality=90` to capture a full-resolution JPEG of the active Envisage 3D viewport, confirming camera orientation and digitized strings.
 
@@ -93,4 +93,3 @@ When executing custom automation code via `vulcan_execute_code`:
      ```
 3. **Graphics Context Protection**:
    * Execute scripts synchronously on Vulcan's main thread to preserve Envisage OpenGL stability.
-

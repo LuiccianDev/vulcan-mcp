@@ -42,4 +42,5 @@ Refer to the master workspace rules in [AGENTS.md](./AGENTS.md).
 ## 7. Continuation Cards & Post-Task Protocol
 - Present a Markdown table with 3 to 4 actionable continuation options at the end of every completed task.
 
-
+## 8. Specialized Mining Skills (`skills/`)
+- Dedicated mining skills are located under root `skills/` (`vulcan-tools-catalog`, `vulcan-workflow`, `vulcan-python-sdk`, `vulcan-file-formats`).

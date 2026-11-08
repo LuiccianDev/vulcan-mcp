@@ -71,4 +71,9 @@ The repository maintains a persistent knowledge graph in `graphify-out/` to enab
 - **Actionable Next Steps**: At the end of every completed turn, task, or verified commit, the assistant must formulate a structured Markdown table of 3 to 4 **Continuation Cards**.
 - **Content**: Offer clear, distinct pathways (e.g. creating a feature branch, running a Vulcan mining audit, triggering a test suite, or preparing a release).
 
-
+## 9. Specialized Mining Skills (`skills/`)
+The repository maintains dedicated, structured skills under root `skills/`:
+- `skills/vulcan-tools-catalog/SKILL.md`: Complete reference and action catalog for the 9 Master Compound Tools.
+- `skills/vulcan-workflow/SKILL.md`: Guided mining workflows for project audits, block model estimation, bilingual drillhole exploration, and CAD validation.
+- `skills/vulcan-python-sdk/SKILL.md`: Python 3.5.2 compatibility, Envisage OpenGL context safety, native SDK manipulation, and hot-reload.
+- `skills/vulcan-file-formats/SKILL.md`: Concise technical reference for Vulcan file formats and tool associations.

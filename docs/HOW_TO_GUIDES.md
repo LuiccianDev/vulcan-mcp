@@ -316,7 +316,7 @@ You need to release a new version of `luiccian-vulcan-mcp` to PyPI and GitHub Re
   - **Environment**: `pypi`
 
 ### Step 1: Preview or bump the version
-Use [`scripts/bump_version.py`](../scripts/bump_version.py) to atomically synchronize `pyproject.toml`, `src/vulcan_mcp/__init__.py`, `.agents/plugins/vulcan-mcp/plugin.json`, `uv.lock`, and `CHANGELOG.md`:
+Use [`scripts/bump_version.py`](../scripts/bump_version.py) to atomically synchronize `pyproject.toml`, `src/vulcan_mcp/__init__.py`, `uv.lock`, and `CHANGELOG.md`:
 
 ```powershell
 # Dry-run preview:

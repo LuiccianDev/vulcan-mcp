@@ -28,7 +28,6 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 PYPROJECT_FILE = ROOT / "pyproject.toml"
 INIT_FILE = ROOT / "src" / "vulcan_mcp" / "__init__.py"
-PLUGIN_JSON_FILE = ROOT / ".agents" / "plugins" / "vulcan-mcp" / "plugin.json"
 UV_LOCK_FILE = ROOT / "uv.lock"
 CHANGELOG_FILE = ROOT / "CHANGELOG.md"
 TEST_FILE = ROOT / "tests" / "test_vulcan_mcp.py"
@@ -85,18 +84,6 @@ def update_init_py(new_version: str, dry_run: bool = False) -> None:
         INIT_FILE.write_text(new_text, encoding="utf-8")
 
 
-def update_plugin_json(new_version: str, dry_run: bool = False) -> None:
-    if not PLUGIN_JSON_FILE.exists():
-        return
-    text = PLUGIN_JSON_FILE.read_text(encoding="utf-8")
-    new_text = re.sub(
-        r'(?m)"version"\s*:\s*"[^"]+"',
-        '"version": "{}"'.format(new_version),
-        text,
-        count=1,
-    )
-    if not dry_run:
-        PLUGIN_JSON_FILE.write_text(new_text, encoding="utf-8")
 
 
 def update_uv_lock(new_version: str, dry_run: bool = False) -> None:
@@ -162,8 +149,6 @@ def main() -> int:
     update_init_py(next_ver, dry_run=args.dry_run)
     print("  [x] src/vulcan_mcp/__init__.py -> {}".format(next_ver))
 
-    update_plugin_json(next_ver, dry_run=args.dry_run)
-    print("  [x] .agents/plugins/vulcan-mcp/plugin.json -> {}".format(next_ver))
 
     update_uv_lock(next_ver, dry_run=args.dry_run)
     print("  [x] uv.lock -> {}".format(next_ver))

@@ -18,6 +18,7 @@ When calling `vulcan_execute_code`, the listener executes within **Python 3.5.2 
   * `vulcan_gui`: `maptek.vulcan_gui` module
   * `project_dir`: absolute path of active working directory
   * Assign any JSON-serializable dictionary or value to the `result` variable to return data back to the client.
+* **Synchronous Execution**: Code runs on Vulcan's main GUI thread to safeguard the Envisage OpenGL context.
 
 ---
 
