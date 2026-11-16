@@ -117,7 +117,14 @@ async def vulcan_triangulation(
     """
     return await _send(
         "triangulation",
-        {"action": action, "name": name, "points": points, "start": start, "end": end, "step": step},
+        {
+            "action": action,
+            "name": name,
+            "points": points,
+            "start": start,
+            "end": end,
+            "step": step,
+        },
     )
 
 
