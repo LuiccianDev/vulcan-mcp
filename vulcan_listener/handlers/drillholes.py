@@ -414,6 +414,139 @@ def display_drillholes(params):
     }
 
 
+def _resolve_interval_table(db, requested_table):
+    """Resolve an interval table name, supporting bilingual defaults."""
+    tables = [str(t) for t in to_list(db.table_list())]
+    if requested_table:
+        if requested_table not in tables:
+            raise CommandError("Table '{}' not found. Available: {}".format(requested_table, ", ".join(tables)))
+        return requested_table
+    upper_map = {t.upper(): t for t in tables}
+    for cand in ("LEYES", "ASSAYS", "ASSAY", "MUESTRAS", "SAMPLES", "LITOLOGIA", "LITHOLOGY"):
+        if cand in upper_map:
+            return upper_map[cand]
+    raise CommandError("No default interval table found; specify 'table'. Available: {}".format(", ".join(tables)))
+
+
+def _scan_hole_qaqc(hole_id, intervals, field, min_valid, max_valid, tolerance):
+    """Validate sorted intervals for one drillhole and return anomaly dicts."""
+    anomalies = []
+    intervals.sort(key=lambda item: (item[0], item[1]))
+    prev_to = None
+    for from_v, to_v, grade_v in intervals:
+        if from_v < 0.0 or from_v >= to_v:
+            anomalies.append({
+                "hole": hole_id,
+                "issue_type": "inverted_interval",
+                "from_depth": round(from_v, 6),
+                "to_depth": round(to_v, 6),
+                "value": grade_v,
+                "detail": "Invalid interval: from ({}) >= to ({}) or negative".format(from_v, to_v),
+            })
+        if field is not None and grade_v is not None:
+            if (min_valid is not None and grade_v < min_valid) or (max_valid is not None and grade_v > max_valid):
+                anomalies.append({
+                    "hole": hole_id,
+                    "issue_type": "out_of_range",
+                    "from_depth": round(from_v, 6),
+                    "to_depth": round(to_v, 6),
+                    "value": grade_v,
+                    "detail": "Field '{}' value {} outside [{}, {}]".format(field, grade_v, min_valid, max_valid),
+                })
+        if prev_to is not None:
+            if from_v < prev_to - tolerance:
+                anomalies.append({
+                    "hole": hole_id,
+                    "issue_type": "overlap",
+                    "from_depth": round(from_v, 6),
+                    "to_depth": round(to_v, 6),
+                    "value": grade_v,
+                    "detail": "Overlap of {:.4f}m with previous interval ending at {:.4f}m".format(prev_to - from_v, prev_to),
+                })
+            elif from_v > prev_to + tolerance:
+                anomalies.append({
+                    "hole": hole_id,
+                    "issue_type": "gap",
+                    "from_depth": round(from_v, 6),
+                    "to_depth": round(to_v, 6),
+                    "value": grade_v,
+                    "detail": "Sampling gap of {:.4f}m after previous interval ending at {:.4f}m".format(from_v - prev_to, prev_to),
+                })
+        if prev_to is None or to_v > prev_to:
+            prev_to = to_v
+    return anomalies
+
+
+def qaqc_validation(params):
+    """Validate drillhole interval table for overlaps, sampling gaps, inverted intervals, and out-of-range grades."""
+    requested_table = params.get("table")
+    field = params.get("field")
+    tolerance = float(params.get("tolerance") if params.get("tolerance") is not None else 0.001)
+    min_valid = params.get("min_valid")
+    if min_valid is not None:
+        min_valid = float(min_valid)
+    elif field is not None:
+        min_valid = 0.0
+    max_valid = float(params["max_valid"]) if params.get("max_valid") is not None else None
+    limit = int(params.get("limit") or 100)
+
+    db = _open(params)
+    try:
+        table = _resolve_interval_table(db, requested_table)
+        fields_of = _field_cache(db)
+        f_all, f_str = fields_of(table)
+        from_col = _pick_field(("FROM", "DESDE", "DEPTH_FROM"), f_all)
+        to_col = _pick_field(("TO", "HASTA", "DEPTH_TO"), f_all)
+        if not from_col or not to_col:
+            raise CommandError("Table '{}' does not contain FROM/DESDE and TO/HASTA fields".format(table))
+        if field is not None:
+            if field not in f_all:
+                raise CommandError("Field '{}' not in table '{}'. Fields: {}".format(field, table, ", ".join(f_all)))
+            if field in f_str:
+                raise CommandError("Field '{}' in table '{}' is a string field, not numeric".format(field, table))
+
+        by_hole = {}
+        intervals_checked = 0
+        for _ in db:
+            if str(db.get_table_name()) != table:
+                continue
+            try:
+                from_v = float(db.get(from_col))
+                to_v = float(db.get(to_col))
+            except Exception:
+                continue
+            grade_v = None
+            if field is not None:
+                try:
+                    grade_v = float(db.get(field))
+                except Exception:
+                    grade_v = None
+            hole_id = str(db.get_key())
+            by_hole.setdefault(hole_id, []).append((from_v, to_v, grade_v))
+            intervals_checked += 1
+
+        all_anomalies = []
+        summary = {"overlap": 0, "gap": 0, "inverted_interval": 0, "out_of_range": 0}
+        for hole_id in sorted(by_hole.keys()):
+            hole_issues = _scan_hole_qaqc(hole_id, by_hole[hole_id], field, min_valid, max_valid, tolerance)
+            for issue in hole_issues:
+                summary[issue["issue_type"]] = summary.get(issue["issue_type"], 0) + 1
+                all_anomalies.append(issue)
+
+        return {
+            "db": params["db"],
+            "table": table,
+            "field": field,
+            "holes_checked": len(by_hole),
+            "intervals_checked": intervals_checked,
+            "total_anomalies": len(all_anomalies),
+            "summary": summary,
+            "anomalies": all_anomalies[:limit],
+        }
+    finally:
+        db.close()
+
+
 ACTIONS = {
     "list_dbs": list_dbs,
     "schema": schema,
@@ -422,6 +555,7 @@ ACTIONS = {
     "high_grade": high_grade,
     "display": display_drillholes,
     "clear_display": clear_display,
+    "qaqc_validation": qaqc_validation,
 }
 
 

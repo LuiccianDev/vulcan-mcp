@@ -180,7 +180,14 @@ async def vulcan_design(
 )
 async def vulcan_drillholes(
     action: Literal[
-        "list_dbs", "schema", "holes", "hole", "high_grade", "display", "clear_display"
+        "list_dbs",
+        "schema",
+        "holes",
+        "hole",
+        "high_grade",
+        "display",
+        "clear_display",
+        "qaqc_validation",
     ],
     db: str | None = None,
     hole: str | None = None,
@@ -188,13 +195,16 @@ async def vulcan_drillholes(
     table: str | None = None,
     field: str | None = None,
     min_value: float | None = None,
+    min_valid: float | None = None,
+    max_valid: float | None = None,
+    tolerance: float | None = None,
     mode: Literal["isis", "dgd"] | None = None,
     save_layer: str | None = None,
     max_segments: int | None = None,
     limit: int | None = None,
     offset: int | None = None,
 ) -> dict:
-    """Master tool for ISIS Drillhole Databases (.dhd.isis): collars, surveys, assays, lithology, and 3D display.
+    """Master tool for ISIS Drillhole Databases (.dhd.isis): collars, surveys, assays, lithology, QA/QC, and 3D display.
 
     Actions:
     - list_dbs: List all drillhole databases in the project.
@@ -205,6 +215,8 @@ async def vulcan_drillholes(
     - display: Render 3D drillholes in Vulcan's 3D viewport colour-coded by grade (`db`, optional `holes`, `table`, `field`,
       `limit`, `max_segments`, `mode`, `save_layer`).
     - clear_display: Remove rendered 3D drillholes from Vulcan's 3D viewport.
+    - qaqc_validation: Scan an interval table for overlaps, sampling gaps, inverted intervals, and out-of-range grades
+      (`db`, optional `table`, `field`, `min_valid`, `max_valid`, `tolerance`, `limit`).
     """
     return await _send(
         "drillholes",
@@ -216,6 +228,9 @@ async def vulcan_drillholes(
             "table": table,
             "field": field,
             "min_value": min_value,
+            "min_valid": min_valid,
+            "max_valid": max_valid,
+            "tolerance": tolerance,
             "mode": mode,
             "save_layer": save_layer,
             "max_segments": max_segments,

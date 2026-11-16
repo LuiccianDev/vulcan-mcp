@@ -105,6 +105,30 @@ class DrillholeAuditResponse(VulcanBaseResponse):
     summary: Optional[Dict[str, Any]] = None
 
 
+class QAQCAnomaly(BaseModel):
+    """Single QA/QC anomaly detected in drillhole intervals."""
+
+    hole: str
+    issue_type: str
+    from_depth: float
+    to_depth: float
+    value: Optional[float] = None
+    detail: str
+
+
+class DrillholeQAQCResponse(VulcanBaseResponse):
+    """Response model for drillhole database QA/QC validation."""
+
+    db: Optional[str] = None
+    table: Optional[str] = None
+    field: Optional[str] = None
+    holes_checked: int = 0
+    intervals_checked: int = 0
+    total_anomalies: int = 0
+    summary: Dict[str, int] = Field(default_factory=dict)
+    anomalies: List[QAQCAnomaly] = Field(default_factory=list)
+
+
 class DesignCadResponse(VulcanBaseResponse):
     """Response model for CAD layers and objects."""
 
