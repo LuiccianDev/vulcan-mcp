@@ -40,11 +40,9 @@ jobs:
       - name: Build Distribution Packages (wheel + sdist)
         run: uv build
 
-      - name: Generate Checksums
-        working-directory: dist
+      - name: Package Vulcan Listener Bundle
         run: |
-          sha256sum * > SHA256SUMS.txt
-          cat SHA256SUMS.txt
+          python -c "import os, zipfile; zf = zipfile.ZipFile('dist/vulcan_listener.zip', 'w', zipfile.ZIP_DEFLATED); [zf.write(os.path.join(r, f)) for r, _, fs in os.walk('vulcan_listener') if '__pycache__' not in r for f in fs if not f.endswith('.pyc')]; zf.close()"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -52,7 +50,7 @@ jobs:
           files: |
             dist/*.whl
             dist/*.tar.gz
-            dist/SHA256SUMS.txt
+            dist/vulcan_listener.zip
           generate_release_notes: true
           draft: false
           prerelease: false
