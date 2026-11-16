@@ -115,11 +115,12 @@ You don't need to manually create or configure virtual environments if you have 
 
 ### Step 1: Start the Socket Listener inside Maptek Vulcan 12
 
-1. Open your mining project in **Maptek Vulcan 12 Desktop (Envisage)**.
-2. In Vulcan's top menu, go to **File > Python Script** (or type `py` in Vulcan's command window).
-3. Select the file [`vulcan_listener/server.py`](./vulcan_listener/server.py).
-4. Check the box **"Run in shell window"** and click **OK**.
-5. A Windows console window will open confirming the listener is running:
+1. Download **`vulcan_listener.zip`** from the [Latest GitHub Release](https://github.com/LuiccianDev/vulcan-mcp/releases/latest) and extract it to any folder (or use `vulcan_listener/` from a cloned repository).
+2. Open your mining project in **Maptek Vulcan 12 Desktop (Envisage)**.
+3. In Vulcan's top menu, go to **File > Python Script** (or type `py` in Vulcan's command window).
+4. Select the extracted [`vulcan_listener/server.py`](./vulcan_listener/server.py).
+5. Check the box **"Run in shell window"** and click **OK**.
+6. A Windows console window will open confirming the listener is running:
 
 ```text
 ==============================================================
