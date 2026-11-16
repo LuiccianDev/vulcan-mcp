@@ -1,7 +1,7 @@
 """Triangulation commands (.00t / .tri)."""
 import os
 
-from .common import command, list_files, require, resolve, run_action, to_list, vulcan, vulcan_gui
+from .common import CommandError, command, list_files, require, resolve, run_action, to_list, vulcan, vulcan_gui
 
 SUFFIXES = (".00t", ".tri")
 
@@ -116,11 +116,87 @@ def profile(params):
     }
 
 
+def _extent_xy(raw_extent):
+    """Extract (min_x, min_y, max_x, max_y) from Vulcan's nested [[min], [max]] or flat 6-float extent."""
+    ext = to_list(raw_extent)
+    if len(ext) == 2 and isinstance(ext[0], (list, tuple)):
+        p_min = to_list(ext[0])
+        p_max = to_list(ext[1])
+        return float(p_min[0]), float(p_min[1]), float(p_max[0]), float(p_max[1])
+    return float(ext[0]), float(ext[1]), float(ext[3]), float(ext[4])
+
+
+def cut_fill(params):
+    """Calculate cut, fill, and net volumes between a base surface and a target surface over a 2D grid."""
+    base_name = require(params, "name")
+    target_name = require(params, "target_name")
+    step = float(params.get("step") if params.get("step") is not None else 10.0)
+    if step <= 0.0:
+        raise CommandError("Grid step must be greater than 0")
+
+    base_tri = vulcan().triangulation(resolve(base_name, SUFFIXES))
+    target_tri = vulcan().triangulation(resolve(target_name, SUFFIXES))
+
+    b_min_x, b_min_y, b_max_x, b_max_y = _extent_xy(base_tri.extent())
+    t_min_x, t_min_y, t_max_x, t_max_y = _extent_xy(target_tri.extent())
+    min_x = max(b_min_x, t_min_x)
+    min_y = max(b_min_y, t_min_y)
+    max_x = min(b_max_x, t_max_x)
+    max_y = min(b_max_y, t_max_y)
+
+    if min_x >= max_x or min_y >= max_y:
+        raise CommandError("Surfaces '{}' and '{}' have no overlapping XY extent".format(base_name, target_name))
+
+    nx = int((max_x - min_x) / step) + 1
+    ny = int((max_y - min_y) / step) + 1
+    if nx * ny > 250000:
+        raise CommandError("Grid too dense ({} cells); increase 'step' above {}".format(nx * ny, step))
+
+    cell_area = step * step
+    cut_vol = 0.0
+    fill_vol = 0.0
+    sampled = 0
+
+    for ix in range(nx):
+        x = min_x + (ix + 0.5) * step
+        if x > max_x:
+            continue
+        for iy in range(ny):
+            y = min_y + (iy + 0.5) * step
+            if y > max_y:
+                continue
+            try:
+                zb = base_tri.get_elevation(x, y)
+                zt = target_tri.get_elevation(x, y)
+            except Exception:
+                continue
+            if zb is None or zt is None:
+                continue
+            sampled += 1
+            diff = float(zt) - float(zb)
+            if diff < 0.0:
+                cut_vol += (-diff) * cell_area
+            elif diff > 0.0:
+                fill_vol += diff * cell_area
+
+    return {
+        "base_triangulation": base_name,
+        "target_triangulation": target_name,
+        "step": step,
+        "sampled_cells": sampled,
+        "area_evaluated_m2": round(sampled * cell_area, 2),
+        "cut_volume_m3": round(cut_vol, 2),
+        "fill_volume_m3": round(fill_vol, 2),
+        "net_volume_m3": round(fill_vol - cut_vol, 2),
+    }
+
+
 ACTIONS = {
     "list": list_tris,
     "info": info,
     "elevation": elevation,
     "profile": profile,
+    "cut_fill": cut_fill,
     "point_inside": point_inside,
     "load": load,
     "unload": unload,

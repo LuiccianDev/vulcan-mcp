@@ -1,6 +1,9 @@
 """FastMCP Server for Maptek Vulcan 12 Desktop (Master Compound Tools Mode)."""
 
+import argparse
 import asyncio
+import json
+import sys
 from typing import Literal
 
 try:
@@ -12,8 +15,16 @@ except (ImportError, AttributeError):
 
 from mcp.types import ImageContent, ToolAnnotations
 
+from vulcan_mcp import __version__
 from vulcan_mcp.client import VulcanMCPClient
-from vulcan_mcp.protocol import TIMEOUT_DEFAULT, TIMEOUT_LONG
+from vulcan_mcp.protocol import (
+    TIMEOUT_DEFAULT,
+    TIMEOUT_LONG,
+    generate_and_save_token,
+    get_auth_token,
+    get_host,
+    get_port,
+)
 
 mcp = FastMCP("Maptek Vulcan MCP")
 _client = VulcanMCPClient()
@@ -32,17 +43,19 @@ async def _send(command: str, params: dict, timeout: float = TIMEOUT_DEFAULT) ->
     annotations=ToolAnnotations(read_only_hint=True),
 )
 async def vulcan_system(
-    action: Literal["ping", "project_info", "capabilities"] = "project_info",
+    action: Literal["ping", "project_info", "capabilities", "reload"] = "project_info",
+    module: str | None = None,
 ) -> dict:
-    """Master tool for Vulcan connectivity, active mine project inventory, and SDK capabilities.
+    """Master tool for Vulcan connectivity, active mine project inventory, SDK capabilities, and hot-reload.
 
     Actions:
     - ping: Check live connection to Maptek Vulcan Desktop.
     - project_info: List all block models (.bmf), triangulations (.00t/.tri), design DBs (.dgd.isis),
       drillhole DBs (.dhd.isis), specifications (.dsf), and legends (.scd) in the active project.
     - capabilities: Inspect available Python modules inside Vulcan (pandas, PIL, win32gui).
+    - reload: Hot-reload one handler (`module`) or all registered handlers inside Vulcan.
     """
-    return await _send("system", {"action": action})
+    return await _send("system", {"action": action, "module": module})
 
 
 @mcp.tool(
@@ -97,8 +110,11 @@ async def vulcan_block_model(
     annotations=ToolAnnotations(idempotent_hint=True),
 )
 async def vulcan_triangulation(
-    action: Literal["list", "info", "elevation", "profile", "point_inside", "load", "unload"],
+    action: Literal[
+        "list", "info", "elevation", "profile", "cut_fill", "point_inside", "load", "unload"
+    ],
     name: str | None = None,
+    target_name: str | None = None,
     points: list[list[float]] | None = None,
     start: list[float] | None = None,
     end: list[float] | None = None,
@@ -111,6 +127,7 @@ async def vulcan_triangulation(
     - info: Return node count, face count, 3D bounding box extent, closure/consistency/crossing state, centroid, and volume (`name`).
     - elevation: Query surface Z elevation at [[x, y], ...] coordinates (`name`, `points`).
     - profile: Compute longitudinal elevation profile between two points with step increments (`name`, `start`, `end`, optional `step`).
+    - cut_fill: Compute cut, fill, and net volumes between `name` (base) and `target_name` over a grid (`name`, `target_name`, optional `step`).
     - point_inside: Check whether 3D coordinates [[x, y, z], ...] lie inside a closed triangulation solid (`name`, `points`).
     - load: Display triangulation on Vulcan's 3D graphics screen (`name`).
     - unload: Remove triangulation from Vulcan's 3D graphics screen (`name`).
@@ -120,6 +137,7 @@ async def vulcan_triangulation(
         {
             "action": action,
             "name": name,
+            "target_name": target_name,
             "points": points,
             "start": start,
             "end": end,
@@ -188,6 +206,7 @@ async def vulcan_drillholes(
         "display",
         "clear_display",
         "qaqc_validation",
+        "stats",
     ],
     db: str | None = None,
     hole: str | None = None,
@@ -217,6 +236,8 @@ async def vulcan_drillholes(
     - clear_display: Remove rendered 3D drillholes from Vulcan's 3D viewport.
     - qaqc_validation: Scan an interval table for overlaps, sampling gaps, inverted intervals, and out-of-range grades
       (`db`, optional `table`, `field`, `min_valid`, `max_valid`, `tolerance`, `limit`).
+    - stats: Compute descriptive and length-weighted statistics (`min`, `max`, `mean`, `weighted_mean`, `std_dev`,
+      `p50`, `p90`) for a numeric field (`db`, `field`, optional `table`).
     """
     return await _send(
         "drillholes",
@@ -323,9 +344,94 @@ async def vulcan_execute_code(code: str) -> dict:
     return res
 
 
-def main():
+def build_cli_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="luiccian-vulcan-mcp",
+        description="Model Context Protocol (MCP) server for Maptek Vulcan 12 Desktop.",
+    )
+    parser.add_argument(
+        "--version",
+        action="store_true",
+        help="Print the MCP server package version and exit.",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Run a live TCP health check against the Maptek Vulcan listener and exit.",
+    )
+    parser.add_argument(
+        "--generate-token",
+        action="store_true",
+        help="Generate a shared HMAC auth token in ~/.vulcan_mcp/token and print client config.",
+    )
+    return parser
+
+
+def _run_health_check() -> int:
+    host = get_host()
+    port = get_port()
+    token_configured = bool(get_auth_token())
+    client = VulcanMCPClient(host=host, port=port, timeout=3.0, max_retries=0)
+    try:
+        ping_res = client.send_command("system", {"action": "ping"})
+    except Exception as exc:
+        print(
+            json.dumps(
+                {
+                    "ok": False,
+                    "mcp_version": __version__,
+                    "host": host,
+                    "port": port,
+                    "token_configured": token_configured,
+                    "error": str(exc),
+                },
+                indent=2,
+            ),
+            file=sys.stderr,
+        )
+        return 1
+
+    listener_ver = ping_res.get("listener_version")
+    report = {
+        "ok": True,
+        "mcp_version": __version__,
+        "listener_version": listener_ver,
+        "protocol_version": ping_res.get("protocol_version"),
+        "version_match": listener_ver == __version__ if listener_ver else None,
+        "host": host,
+        "port": port,
+        "token_configured": token_configured,
+        "vulcan_python": ping_res.get("python"),
+        "project_dir": ping_res.get("project_dir"),
+        "domains": ping_res.get("domains"),
+    }
+    print(json.dumps(report, indent=2))
+    if listener_ver and listener_ver != __version__:
+        print(
+            f"Warning: MCP version ({__version__}) != listener version ({listener_ver}).",
+            file=sys.stderr,
+        )
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_cli_parser()
+    args = parser.parse_args(argv)
+    if args.version:
+        print(f"luiccian-vulcan-mcp {__version__}")
+        return 0
+    if args.generate_token:
+        token, token_path = generate_and_save_token()
+        print(f"Generated shared HMAC token and saved to: {token_path}")
+        print(f"Token: {token}")
+        print("\nOptional explicit AI client env block:")
+        print(json.dumps({"env": {"VULCAN_MCP_TOKEN": token}}, indent=2))
+        return 0
+    if args.check:
+        return _run_health_check()
     mcp.run()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

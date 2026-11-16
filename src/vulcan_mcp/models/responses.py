@@ -129,6 +129,38 @@ class DrillholeQAQCResponse(VulcanBaseResponse):
     anomalies: List[QAQCAnomaly] = Field(default_factory=list)
 
 
+class DrillholeStatsResponse(VulcanBaseResponse):
+    """Response model for descriptive & length-weighted drillhole statistics."""
+
+    db: Optional[str] = None
+    table: Optional[str] = None
+    field: Optional[str] = None
+    intervals_scanned: int = 0
+    valid_count: int = 0
+    missing_count: int = 0
+    min: Optional[float] = None
+    max: Optional[float] = None
+    mean: Optional[float] = None
+    weighted_mean: Optional[float] = None
+    std_dev: Optional[float] = None
+    p50: Optional[float] = None
+    p90: Optional[float] = None
+    total_length: float = 0.0
+
+
+class CutFillResponse(VulcanBaseResponse):
+    """Response model for volumetric cut/fill comparison between two surfaces."""
+
+    base_triangulation: Optional[str] = None
+    target_triangulation: Optional[str] = None
+    step: Optional[float] = None
+    sampled_cells: int = 0
+    area_evaluated_m2: float = 0.0
+    cut_volume_m3: float = 0.0
+    fill_volume_m3: float = 0.0
+    net_volume_m3: float = 0.0
+
+
 class DesignCadResponse(VulcanBaseResponse):
     """Response model for CAD layers and objects."""
 

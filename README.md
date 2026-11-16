@@ -358,6 +358,22 @@ Both the plugin inside Maptek Vulcan and the external MCP server automatically r
 
 ## Authentication & Security
 
+### CLI Diagnostics & Token Generation (`--version`, `--check`, `--generate-token`)
+You can inspect the MCP server, verify live connectivity with Maptek Vulcan, or generate a shared HMAC secret directly from your terminal without blocking `stdin`:
+
+```powershell
+# Print the installed MCP server version
+uvx luiccian-vulcan-mcp --version
+
+# Run a live TCP health check against vulcan_listener (checks version parity & domains)
+uvx luiccian-vulcan-mcp --check
+
+# Generate a shared HMAC token in ~/.vulcan_mcp/token (automatically read by both MCP & listener)
+uvx luiccian-vulcan-mcp --generate-token
+```
+
+Both `vulcan_mcp` and `vulcan_listener/server.py` prioritize `VULCAN_MCP_TOKEN` from the environment and automatically fall back to `~/.vulcan_mcp/token` (stored outside the repository).
+
 ### Zero `.env` Philosophy
 You do not need to create or manage insecure `.env` files containing plain text passwords that might accidentally be committed to Git. Tokens are managed at the Windows OS environment level:
 

@@ -547,6 +547,104 @@ def qaqc_validation(params):
         db.close()
 
 
+def _percentile(sorted_vals, pct):
+    """Linear-interpolated percentile over a non-empty sorted list."""
+    if len(sorted_vals) == 1:
+        return sorted_vals[0]
+    k = (len(sorted_vals) - 1) * (pct / 100.0)
+    f = int(math.floor(k))
+    c = int(math.ceil(k))
+    if f == c:
+        return sorted_vals[f]
+    return sorted_vals[f] + (sorted_vals[c] - sorted_vals[f]) * (k - f)
+
+
+def stats(params):
+    """Compute descriptive and length-weighted statistics for a numeric drillhole field."""
+    field = require(params, "field")
+    db = _open(params)
+    try:
+        table = _resolve_interval_table(db, params.get("table"))
+        fields_of = _field_cache(db)
+        f_all, f_str = fields_of(table)
+        if field not in f_all:
+            raise CommandError("Field '{}' not in table '{}'. Fields: {}".format(field, table, ", ".join(f_all)))
+        if field in f_str:
+            raise CommandError("Field '{}' in table '{}' is a string field, not numeric".format(field, table))
+
+        from_col = _pick_field(("FROM", "DESDE", "DEPTH_FROM"), f_all)
+        to_col = _pick_field(("TO", "HASTA", "DEPTH_TO"), f_all)
+
+        values = []
+        weighted_sum = 0.0
+        total_length = 0.0
+        scanned = 0
+        missing = 0
+
+        for _ in db:
+            if str(db.get_table_name()) != table:
+                continue
+            scanned += 1
+            try:
+                val = float(db.get(field))
+            except Exception:
+                missing += 1
+                continue
+            if math.isnan(val) or math.isinf(val):
+                missing += 1
+                continue
+            values.append(val)
+            if from_col and to_col:
+                try:
+                    length = float(db.get(to_col)) - float(db.get(from_col))
+                    if length > 0.0:
+                        weighted_sum += val * length
+                        total_length += length
+                except Exception:
+                    pass
+
+        if not values:
+            return {
+                "db": params["db"],
+                "table": table,
+                "field": field,
+                "intervals_scanned": scanned,
+                "valid_count": 0,
+                "missing_count": missing,
+                "min": None,
+                "max": None,
+                "mean": None,
+                "weighted_mean": None,
+                "std_dev": None,
+                "p50": None,
+                "p90": None,
+                "total_length": 0.0,
+            }
+
+        values.sort()
+        n = len(values)
+        mean_v = sum(values) / float(n)
+        var_v = sum((v - mean_v) ** 2 for v in values) / float(n)
+        return {
+            "db": params["db"],
+            "table": table,
+            "field": field,
+            "intervals_scanned": scanned,
+            "valid_count": n,
+            "missing_count": missing,
+            "min": round(values[0], 6),
+            "max": round(values[-1], 6),
+            "mean": round(mean_v, 6),
+            "weighted_mean": round(weighted_sum / total_length, 6) if total_length > 0.0 else None,
+            "std_dev": round(math.sqrt(var_v), 6),
+            "p50": round(_percentile(values, 50.0), 6),
+            "p90": round(_percentile(values, 90.0), 6),
+            "total_length": round(total_length, 3),
+        }
+    finally:
+        db.close()
+
+
 ACTIONS = {
     "list_dbs": list_dbs,
     "schema": schema,
@@ -556,6 +654,7 @@ ACTIONS = {
     "display": display_drillholes,
     "clear_display": clear_display,
     "qaqc_validation": qaqc_validation,
+    "stats": stats,
 }
 
 
