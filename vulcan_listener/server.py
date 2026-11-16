@@ -51,10 +51,32 @@ def is_loopback(host):
     return str(host or "").strip().lower() in LOOPBACK_HOSTS
 
 
+def _token_file_path():
+    return os.path.join(os.path.expanduser("~"), ".vulcan_mcp", "token")
+
+
 def _get_expected_token():
     if TOKEN:
         return TOKEN
-    return os.environ.get("VULCAN_MCP_TOKEN", "").strip()
+    env_token = os.environ.get("VULCAN_MCP_TOKEN", "").strip()
+    if env_token:
+        return env_token
+    token_path = _token_file_path()
+    try:
+        if os.path.isfile(token_path):
+            with open(token_path, "r") as fh:
+                return fh.read().strip()
+    except Exception:
+        pass
+    return ""
+
+
+def _listener_version():
+    try:
+        import __init__ as listener_pkg
+        return getattr(listener_pkg, "__version__", "0.4.0")
+    except Exception:
+        return "0.4.0"
 
 
 def validate_binding_security(host=None, token=None):
@@ -147,7 +169,7 @@ def serve_forever():
     sock.listen(5)
     token_active = bool(_get_expected_token())
     log("=" * 62)
-    log("Vulcan MCP Listener started on {}:{}".format(HOST, PORT))
+    log("Vulcan MCP Listener v{} started on {}:{}".format(_listener_version(), HOST, PORT))
     log("Working directory: {}".format(os.getcwd()))
     log("Registered domains: {}".format(", ".join(sorted(COMMANDS))))
     if token_active:

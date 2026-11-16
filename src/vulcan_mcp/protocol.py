@@ -2,7 +2,9 @@
 
 import json
 import os
+import secrets
 import struct
+from pathlib import Path
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 9877
@@ -10,10 +12,16 @@ HEADER_STRUCT = struct.Struct("!I")
 MAX_MESSAGE_SIZE = 64 * 1024 * 1024
 TIMEOUT_DEFAULT = 30.0
 TIMEOUT_LONG = 120.0
+TOKEN_DIR_NAME = ".vulcan_mcp"
+TOKEN_FILE_NAME = "token"
 
 
 class CommandTimeout(ConnectionError):
     """Raised when a socket command times out waiting for Vulcan."""
+
+
+def get_token_file_path() -> Path:
+    return Path.home() / TOKEN_DIR_NAME / TOKEN_FILE_NAME
 
 
 def get_host() -> str:
@@ -27,7 +35,28 @@ def get_port() -> int:
 
 def get_auth_token() -> str | None:
     token = os.environ.get("VULCAN_MCP_TOKEN", "").strip()
-    return token or None
+    if token:
+        return token
+    token_path = get_token_file_path()
+    try:
+        if token_path.is_file():
+            file_token = token_path.read_text(encoding="utf-8").strip()
+            return file_token or None
+    except OSError:
+        pass
+    return None
+
+
+def generate_and_save_token() -> tuple[str, Path]:
+    token = secrets.token_urlsafe(32)
+    token_path = get_token_file_path()
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    token_path.write_text(token + "\n", encoding="utf-8")
+    try:
+        os.chmod(token_path, 0o600)
+    except OSError:
+        pass
+    return token, token_path
 
 
 def pack_message(envelope: dict) -> bytes:
