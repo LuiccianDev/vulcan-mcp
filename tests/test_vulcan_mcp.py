@@ -247,7 +247,7 @@ def test_version_synchronization():
     pkg_version = vulcan_mcp.__version__
 
     assert pkg_version == pyproject_version
-    assert pkg_version == "0.3.4"
+    assert pkg_version == "0.4.0"
 
 
 def test_drillhole_qaqc_validation(monkeypatch):

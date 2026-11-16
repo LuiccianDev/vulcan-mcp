@@ -10,6 +10,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+---
+
+## [0.4.0] - 2026-11-16
+### Added
+- **Mining Analytics & QA/QC Actions**:
+  - `grade_tonnage_curve` in `vulcan_block_model` for multi-cutoff tonnage and mean grade evaluation.
+  - `profile` in `vulcan_triangulation` for longitudinal elevation profile sampling (`ProfilePoint`, `ElevationProfileResponse`).
+  - `qaqc_validation` in `vulcan_drillholes` for bilingual `.dhd.isis` interval audits (overlaps, sampling gaps, inverted intervals, out-of-range grades) with `QAQCAnomaly` and `DrillholeQAQCResponse`.
+- **Typed Response Contracts & Tooling**:
+  - Added Pydantic v2 response schemas in `src/vulcan_mcp/models/`.
+  - Established root `skills/` catalog and installed `pstack`, `thermos`, and `cursor-team-kit` plugins.
+
+### Fixed
+- **Envisage Screenshot Cropping**: Window-bounded screenshot capture via `ctypes.windll.user32` in `vulcan_listener/handlers/canvas.py`.
+- **TCP Listener & Client Resilience**: Added `CLIENT_READ_TIMEOUT`, envelope/params guards before `dispatch`, `OSError` handling in `sock.accept()`, and `ConnectionError` retries in `vulcan_listener/server.py` and `VulcanMCPClient`.
+
+### Security
+- Bumped `opentelemetry-api` to `1.45.2` resolving `CVE-2026-126360`.
+
+
 
 
 ---
