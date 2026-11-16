@@ -68,10 +68,59 @@ def point_inside(params):
     }
 
 
+def profile(params):
+    import math
+    path = resolve(require(params, "name"), SUFFIXES)
+    start_pt = require(params, "start")
+    end_pt = require(params, "end")
+    step = float(params.get("step") or 10.0)
+    if step <= 0.0:
+        step = 10.0
+
+    x1, y1 = float(start_pt[0]), float(start_pt[1])
+    x2, y2 = float(end_pt[0]), float(end_pt[1])
+    total_length = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+    tri = vulcan().triangulation(path)
+    n_samples = max(2, int(total_length / step) + 1)
+    points = []
+    elevations = []
+
+    for i in range(n_samples):
+        fraction = float(i) / float(n_samples - 1)
+        sx = x1 + fraction * (x2 - x1)
+        sy = y1 + fraction * (y2 - y1)
+        station = fraction * total_length
+        try:
+            z = tri.get_elevation(sx, sy)
+            if z is not None and not math.isnan(z) and z > -9999.0:
+                elevations.append(z)
+            else:
+                z = None
+        except Exception:
+            z = None
+        points.append({
+            "station": round(station, 2),
+            "x": round(sx, 3),
+            "y": round(sy, 3),
+            "z": round(z, 3) if z is not None else None,
+        })
+
+    return {
+        "triangulation": params["name"],
+        "total_length": round(total_length, 2),
+        "step": step,
+        "min_elevation": round(min(elevations), 3) if elevations else None,
+        "max_elevation": round(max(elevations), 3) if elevations else None,
+        "points": points,
+    }
+
+
 ACTIONS = {
     "list": list_tris,
     "info": info,
     "elevation": elevation,
+    "profile": profile,
     "point_inside": point_inside,
     "load": load,
     "unload": unload,

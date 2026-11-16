@@ -85,6 +85,18 @@ async def test_tool_triangulation(mock_vulcan):
     assert info["is_solid"] is True
     assert info["triangle_count"] == 8420
 
+    prof = await vulcan_triangulation(
+        action="profile",
+        name="topo_surface.00t",
+        start=[474000.0, 4479000.0],
+        end=[474500.0, 4479500.0],
+        step=50.0,
+    )
+    assert prof["total_length"] == 500.0
+    assert len(prof["points"]) == 3
+    assert prof["points"][1]["station"] == 250.0
+    assert prof["points"][1]["z"] == 625.0
+
 
 @pytest.mark.asyncio
 async def test_tool_design(mock_vulcan):

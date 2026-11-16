@@ -97,9 +97,12 @@ async def vulcan_block_model(
     annotations=ToolAnnotations(idempotent_hint=True),
 )
 async def vulcan_triangulation(
-    action: Literal["list", "info", "elevation", "point_inside", "load", "unload"],
+    action: Literal["list", "info", "elevation", "profile", "point_inside", "load", "unload"],
     name: str | None = None,
     points: list[list[float]] | None = None,
+    start: list[float] | None = None,
+    end: list[float] | None = None,
+    step: float | None = None,
 ) -> dict:
     """Master tool for 3D triangulations, topography surfaces, and pit shells (.00t / .tri).
 
@@ -107,11 +110,15 @@ async def vulcan_triangulation(
     - list: List all triangulation files in the project.
     - info: Return node count, face count, 3D bounding box extent, closure/consistency/crossing state, centroid, and volume (`name`).
     - elevation: Query surface Z elevation at [[x, y], ...] coordinates (`name`, `points`).
+    - profile: Compute longitudinal elevation profile between two points with step increments (`name`, `start`, `end`, optional `step`).
     - point_inside: Check whether 3D coordinates [[x, y, z], ...] lie inside a closed triangulation solid (`name`, `points`).
     - load: Display triangulation on Vulcan's 3D graphics screen (`name`).
     - unload: Remove triangulation from Vulcan's 3D graphics screen (`name`).
     """
-    return await _send("triangulation", {"action": action, "name": name, "points": points})
+    return await _send(
+        "triangulation",
+        {"action": action, "name": name, "points": points, "start": start, "end": end, "step": step},
+    )
 
 
 @mcp.tool(
