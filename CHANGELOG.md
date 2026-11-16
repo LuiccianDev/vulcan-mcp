@@ -12,6 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-11-16
+### Added
+- **CLI Diagnostics & Shared HMAC Token Auth**:
+  - Added `--help`, `--version`, `--check` (live TCP health check comparing `mcp_version` vs. `listener_version`), and `--generate-token` (`~/.vulcan_mcp/token`) in `src/vulcan_mcp/server.py` and `protocol.py`.
+  - Added `vulcan_listener/__init__.py`, `listener_version`/`protocol_version`/`domains` in `system.ping`, `system.reload` for in-place handler hot-reloading, and `~/.vulcan_mcp/token` fallback in `vulcan_listener/server.py`.
+- **New Mining & Engineering Actions**:
+  - `vulcan_drillholes` (`action="stats"`): descriptive and length-weighted interval statistics (`min`, `max`, `mean`, `weighted_mean`, `std_dev`, `p50`, `p90`) with `DrillholeStatsResponse`.
+  - `vulcan_triangulation` (`action="cut_fill"`): 2D grid cut/fill/net volume comparison between two surfaces with `CutFillResponse`.
+
+### Changed
+- **Minimalist Release Packaging**: Bundled `vulcan_listener.zip` directly in GitHub Releases (`release.yml`), removed `SHA256SUMS.txt`, and updated `README.md` and `skills/vulcan-tools-catalog/SKILL.md`.
+
+
+---
+
 ## [0.4.0] - 2026-11-16
 ### Added
 - **Mining Analytics & QA/QC Actions**:
