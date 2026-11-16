@@ -3,6 +3,7 @@
 Run from Maptek Vulcan Desktop via:
     File > Python Script > vulcan_listener/server.py (check 'Run in shell window')
 """
+
 import hmac
 import os
 import socket
@@ -30,6 +31,7 @@ from handlers.common import COMMANDS, CommandError  # noqa: E402
 HOST = os.environ.get("VULCAN_MCP_HOST", "127.0.0.1").strip() or "127.0.0.1"
 PORT = int(os.environ.get("VULCAN_MCP_PORT", "9877").strip() or "9877")
 TOKEN = os.environ.get("VULCAN_MCP_TOKEN", "").strip()
+CLIENT_READ_TIMEOUT = float(os.environ.get("VULCAN_MCP_CLIENT_TIMEOUT", "5.0").strip() or "5.0")
 LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
 
 
@@ -38,6 +40,7 @@ def log(msg):
     print(line)
     try:
         import maptek.vulcan_gui as vg
+
         if hasattr(vg, "print_message"):
             vg.print_message(line + "\n")
     except Exception:
@@ -77,9 +80,15 @@ def dispatch(req):
     if not isinstance(req, dict):
         return {"status": "error", "message": "Invalid request envelope"}
     if not _check_auth(req):
-        return {"status": "error", "message": "Authentication failed: invalid or missing VULCAN_MCP_TOKEN"}
+        return {
+            "status": "error",
+            "message": "Authentication failed: invalid or missing VULCAN_MCP_TOKEN",
+        }
     cmd = req.get("type")
-    params = req.get("params") or {}
+    raw_params = req.get("params")
+    if raw_params is not None and not isinstance(raw_params, dict):
+        return {"status": "error", "message": "Invalid request params: expected dict"}
+    params = raw_params or {}
     entry = COMMANDS.get(cmd)
     if entry is None:
         return {
@@ -102,16 +111,24 @@ def dispatch(req):
         }
 
 
-def handle_client(conn):
+def handle_client(conn, read_timeout=None):
     try:
+        try:
+            conn.settimeout(CLIENT_READ_TIMEOUT if read_timeout is None else read_timeout)
+        except Exception:
+            pass
         while True:
             req = wire.read_message(conn)
-            cmd = req.get("type", "<unknown>")
-            act = (req.get("params") or {}).get("action")
-            log("Command: {}{}".format(cmd, "." + act if act else ""))
+            if isinstance(req, dict):
+                cmd = req.get("type", "<unknown>")
+                raw_params = req.get("params")
+                act = raw_params.get("action") if isinstance(raw_params, dict) else None
+                log("Command: {}{}".format(cmd, "." + str(act) if act else ""))
+            else:
+                log("Command: <invalid-envelope>")
             resp = dispatch(req)
             conn.sendall(wire.encode(resp))
-    except ConnectionError:
+    except (ConnectionError, socket.timeout):
         pass
     except Exception as exc:
         log("Client error: {}".format(exc))
@@ -143,7 +160,11 @@ def serve_forever():
     log("=" * 62)
     try:
         while True:
-            conn, _ = sock.accept()
+            try:
+                conn, _ = sock.accept()
+            except OSError as exc:
+                log("Accept error (continuing): {}".format(exc))
+                continue
             # Handle synchronously on the main thread so OpenGL / GUI calls are safe
             handle_client(conn)
     except KeyboardInterrupt:

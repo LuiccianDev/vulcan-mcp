@@ -248,3 +248,211 @@ def test_version_synchronization():
 
     assert pkg_version == pyproject_version
     assert pkg_version == "0.3.4"
+
+
+def test_drillhole_qaqc_validation(monkeypatch):
+    """Verify drillholes qaqc_validation end-to-end contract, bilingual fields, limits, and errors."""
+    import pytest
+    from handlers import common, drillholes
+
+    from vulcan_mcp.models import DrillholeQAQCResponse
+
+    class FakeQaqcDB:
+        def __init__(self, rows, fields=None, string_fields=None, tables=None):
+            self._rows = rows
+            self._idx = -1
+            self._fields = fields or ["HOLE_ID", "DESDE", "HASTA", "CUT"]
+            self._str_fields = string_fields or ["HOLE_ID"]
+            self._tables = tables or ["COLLARES", "LEYES"]
+
+        def table_list(self):
+            return self._tables
+
+        def field_list(self, table):
+            return self._fields
+
+        def field_list_strings(self, table):
+            return self._str_fields
+
+        def __iter__(self):
+            for i in range(len(self._rows)):
+                self._idx = i
+                yield self
+
+        def get_table_name(self):
+            return self._rows[self._idx]["_table"]
+
+        def get_key(self):
+            return self._rows[self._idx]["HOLE_ID"]
+
+        def get(self, field):
+            return self._rows[self._idx][field]
+
+        def close(self):
+            pass
+
+    rows = [
+        {"_table": "COLLARES", "HOLE_ID": "DH001"},
+        {"_table": "LEYES", "HOLE_ID": "DH001", "DESDE": 0.0, "HASTA": 2.0, "CUT": 0.5},
+        {"_table": "LEYES", "HOLE_ID": "DH001", "DESDE": 1.5, "HASTA": 4.0, "CUT": -0.2},
+        {"_table": "LEYES", "HOLE_ID": "DH001", "DESDE": 6.0, "HASTA": 5.0, "CUT": 12.0},
+    ]
+    fake_db = FakeQaqcDB(rows)
+    monkeypatch.setattr(drillholes, "_open", lambda params: fake_db)
+
+    res = drillholes.drillholes(
+        {
+            "action": "qaqc_validation",
+            "db": "test.dhd.isis",
+            "field": "CUT",
+            "min_valid": 0.0,
+            "max_valid": 10.0,
+            "limit": 3,
+        }
+    )
+    assert res["table"] == "LEYES"
+    assert res["holes_checked"] == 1
+    assert res["intervals_checked"] == 3
+    assert res["total_anomalies"] == 5
+    assert len(res["anomalies"]) == 3
+    assert res["summary"] == {
+        "overlap": 1,
+        "gap": 1,
+        "inverted_interval": 1,
+        "out_of_range": 2,
+    }
+
+    parsed = DrillholeQAQCResponse(status="success", **res)
+    assert parsed.total_anomalies == 5
+    assert parsed.anomalies[0].hole == "DH001"
+
+    with pytest.raises(common.CommandError, match="string field"):
+        drillholes.drillholes(
+            {
+                "action": "qaqc_validation",
+                "db": "test.dhd.isis",
+                "table": "LEYES",
+                "field": "HOLE_ID",
+            }
+        )
+
+    with pytest.raises(common.CommandError, match="not found"):
+        drillholes.drillholes(
+            {
+                "action": "qaqc_validation",
+                "db": "test.dhd.isis",
+                "table": "MISSING_TABLE",
+            }
+        )
+
+
+def test_listener_and_client_connection_resilience(monkeypatch):
+    """Verify listener handles malformed envelopes, idle/partial timeouts, accept errors, and client retries."""
+    import socket
+    import threading
+
+    import server as listener_server
+    import wire
+
+    from vulcan_mcp.client import VulcanMCPClient
+
+    # 1. Malformed non-dict envelope & non-dict params return clean error envelopes
+    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(4)
+    port = srv.getsockname()[1]
+
+    def _serve_two():
+        for _ in range(2):
+            conn, _ = srv.accept()
+            listener_server.handle_client(conn, read_timeout=1.0)
+
+    t = threading.Thread(target=_serve_two, daemon=True)
+    t.start()
+
+    for payload, expected_msg in (
+        ([1, 2, 3], "Invalid request envelope"),
+        ({"type": "system", "params": "bad"}, "Invalid request params"),
+    ):
+        c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        c.connect(("127.0.0.1", port))
+        c.sendall(wire.encode(payload))
+        resp = wire.read_message(c)
+        assert resp["status"] == "error"
+        assert expected_msg in resp["message"]
+        c.close()
+    t.join(timeout=2.0)
+    srv.close()
+
+    # 2. Idle/stalled client times out cleanly without blocking next client
+    srv2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv2.bind(("127.0.0.1", 0))
+    srv2.listen(4)
+    port2 = srv2.getsockname()[1]
+
+    def _serve_idle_then_valid():
+        conn1, _ = srv2.accept()
+        listener_server.handle_client(conn1, read_timeout=0.15)
+        conn2, _ = srv2.accept()
+        listener_server.handle_client(conn2, read_timeout=1.0)
+
+    t2 = threading.Thread(target=_serve_idle_then_valid, daemon=True)
+    t2.start()
+
+    idle = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    idle.connect(("127.0.0.1", port2))
+    idle.sendall(wire.HEADER.pack(50) + b"part")
+
+    client = VulcanMCPClient(host="127.0.0.1", port=port2, timeout=2.0, max_retries=0)
+    ping_res = client.send_command("system", {"action": "ping"})
+    assert ping_res["connected"] is True
+    idle.close()
+    t2.join(timeout=2.0)
+    srv2.close()
+
+    # 3. VulcanMCPClient retries on immediate post-connect close
+    srv3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv3.bind(("127.0.0.1", 0))
+    srv3.listen(4)
+    port3 = srv3.getsockname()[1]
+
+    def _drop_then_ok():
+        c1, _ = srv3.accept()
+        c1.close()
+        c2, _ = srv3.accept()
+        listener_server.handle_client(c2, read_timeout=1.0)
+
+    t3 = threading.Thread(target=_drop_then_ok, daemon=True)
+    t3.start()
+    retry_client = VulcanMCPClient(
+        host="127.0.0.1", port=port3, timeout=2.0, max_retries=2, retry_delay=0.05
+    )
+    assert retry_client.send_command("system", {"action": "ping"})["connected"] is True
+    t3.join(timeout=2.0)
+    srv3.close()
+
+    # 4. serve_forever survives transient ConnectionAbortedError on accept()
+    calls = {"n": 0}
+
+    class FakeListenSock:
+        def setsockopt(self, *args):
+            pass
+
+        def bind(self, *args):
+            pass
+
+        def listen(self, *args):
+            pass
+
+        def accept(self):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise ConnectionAbortedError("transient abort")
+            raise KeyboardInterrupt()
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(listener_server.socket, "socket", lambda *a, **kw: FakeListenSock())
+    listener_server.serve_forever()
+    assert calls["n"] == 2

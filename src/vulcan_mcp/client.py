@@ -90,6 +90,12 @@ class VulcanMCPClient:
                     f"Vulcan timed out after {actual_timeout}s on '{command_type}'. "
                     "Check if Vulcan Desktop is showing a modal dialog (e.g., 'No design database is currently open')."
                 ) from exc
+            except ConnectionError as exc:
+                last_exception = exc
+                if attempts <= self.max_retries:
+                    time.sleep(self.retry_delay)
+                    continue
+                raise
             finally:
                 sock.close()
 
