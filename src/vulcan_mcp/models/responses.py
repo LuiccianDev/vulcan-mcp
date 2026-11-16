@@ -65,6 +65,26 @@ class BlockModelStatsResponse(VulcanBaseResponse):
     stats: Optional[Dict[str, Any]] = None
 
 
+class ProfilePoint(BaseModel):
+    """Sample point along an elevation profile."""
+
+    station: float
+    x: float
+    y: float
+    z: Optional[float] = None
+
+
+class ElevationProfileResponse(VulcanBaseResponse):
+    """Response model for longitudinal elevation profile across a triangulation."""
+
+    triangulation: Optional[str] = None
+    total_length: Optional[float] = None
+    step: Optional[float] = None
+    min_elevation: Optional[float] = None
+    max_elevation: Optional[float] = None
+    points: List[ProfilePoint] = Field(default_factory=list)
+
+
 class TriangulationResponse(VulcanBaseResponse):
     """Response model for 3D triangulation/solid query."""
 

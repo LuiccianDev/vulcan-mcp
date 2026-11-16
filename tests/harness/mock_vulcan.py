@@ -202,6 +202,19 @@ class MockVulcanServer:
                 "triangulation": params.get("triangulation", "orebody_solid.00t"),
                 "loaded": True,
             }
+        elif action == "profile":
+            return {
+                "triangulation": params.get("name", "topo_surface.00t"),
+                "total_length": 500.0,
+                "step": 50.0,
+                "min_elevation": 600.0,
+                "max_elevation": 650.0,
+                "points": [
+                    {"station": 0.0, "x": 474000.0, "y": 4479000.0, "z": 600.0},
+                    {"station": 250.0, "x": 474250.0, "y": 4479250.0, "z": 625.0},
+                    {"station": 500.0, "x": 474500.0, "y": 4479500.0, "z": 650.0},
+                ],
+            }
         return {"status": "ok"}
 
     def _default_design(self, params: dict[str, Any]) -> dict[str, Any]:
