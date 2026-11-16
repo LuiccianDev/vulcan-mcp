@@ -13,11 +13,11 @@ The **Vulcan MCP** server exposes **9 Master Compound Tools** to Model Context P
 
 | # | MCP Tool Name | Domain / Subsystem | Primary Operations (`action=`) | Timeout |
 | :-: | :--- | :--- | :--- | :---: |
-| 1 | `vulcan_system` | Connection & Project Inventory | `ping`, `project_info`, `capabilities` | `30s` |
-| 2 | `vulcan_block_model` | Block Models (`.bmf`) | `list`, `info`, `query_xyz`, `stats` | `120s` |
-| 3 | `vulcan_triangulation` | 3D Surfaces & Solids (`.00t`/`.tri`) | `list`, `info`, `elevation`, `point_inside`, `load`, `unload` | `30s` |
+| 1 | `vulcan_system` | Connection & Project Inventory | `ping`, `project_info`, `capabilities`, `reload` | `30s` |
+| 2 | `vulcan_block_model` | Block Models (`.bmf`) | `list`, `info`, `query_xyz`, `stats`, `grade_tonnage_curve` | `120s` |
+| 3 | `vulcan_triangulation` | 3D Surfaces & Solids (`.00t`/`.tri`) | `list`, `info`, `elevation`, `profile`, `cut_fill`, `point_inside`, `load`, `unload` | `30s` |
 | 4 | `vulcan_design` | 3D CAD Design DBs (`.dgd.isis`) | `list_dbs`, `list_layers`, `layer_info`, `load_layer`, `clear_temp`, `create_polyline` | `30s` |
-| 5 | `vulcan_drillholes` | ISIS Drillhole DBs (`.dhd.isis`) | `list_dbs`, `schema`, `holes`, `hole`, `high_grade`, `display`, `clear_display` | `120s` |
+| 5 | `vulcan_drillholes` | ISIS Drillhole DBs (`.dhd.isis`) | `list_dbs`, `schema`, `holes`, `hole`, `high_grade`, `qaqc_validation`, `stats`, `display`, `clear_display` | `120s` |
 | 6 | `vulcan_legend` | Envisage Legends (`.scd`) | `list`, `inspect`, `update`, `restore` | `30s` |
 | 7 | `vulcan_screenshot` | Viewport Visual Inspection | Direct parameters (`max_width`, `quality`) | `30s` |
 | 8 | `vulcan_canvas` | UI & Reporting | `macro`, `report` | `30s` |
@@ -30,18 +30,23 @@ The **Vulcan MCP** server exposes **9 Master Compound Tools** to Model Context P
 ### 1. `vulcan_system` — Connection & Project Inventory
 * **Purpose**: Verify live TCP communication with Vulcan Desktop, inventory mining project files, and detect installed Python SDK modules.
 * **Parameters**:
-  * `action` (`str`, optional, default: `"project_info"`): One of `"ping"`, `"project_info"`, `"capabilities"`.
+  * `action` (`str`, optional, default: `"project_info"`): One of `"ping"`, `"project_info"`, `"capabilities"`, `"reload"`.
+  * `module` (`str`, optional): Target handler module for `action="reload"` (reloads all handlers when omitted).
 * **Actions & Return Schemas**:
   * `action="ping"`:
     ```json
     {
       "connected": true,
       "app": "Maptek Vulcan",
+      "listener_version": "0.4.0",
+      "protocol_version": 1,
       "python": "3.5.2",
       "vulcan_api": true,
-      "project_dir": "C:\\MiningProjects\\Deposit_A"
+      "project_dir": "C:\\MiningProjects\\Deposit_A",
+      "domains": ["block_model", "canvas", "design", "drillholes", "execute_code", "legend", "system", "triangulation"]
     }
     ```
+  * `action="reload"`: Hot-reloads one or all `vulcan_listener/handlers/*.py` modules inside Maptek Vulcan without restarting.
   * `action="project_info"`:
     ```json
     {
@@ -69,8 +74,9 @@ The **Vulcan MCP** server exposes **9 Master Compound Tools** to Model Context P
 ### 2. `vulcan_block_model` — Block Models (`.bmf`)
 * **Purpose**: Inspect spatial extents, variable schemas, point coordinate queries, and volume-weighted resource calculations on regular or sub-blocked `.bmf` models.
 * **Parameters**:
-  * `action` (`str`, required): `"list"`, `"info"`, `"query_xyz"`, or `"stats"`.
-  * `model` (`str`, optional): Block model filename (e.g. `"copper_deposit.bmf"`). Required for `info`, `query_xyz`, `stats`.
+  * `action` (`str`, required): `"list"`, `"info"`, `"query_xyz"`, `"stats"`, or `"grade_tonnage_curve"`.
+  * `model` (`str`, optional): Block model filename (e.g. `"copper_deposit.bmf"`). Required for `info`, `query_xyz`, `stats`, `grade_tonnage_curve`.
+  * `cutoffs` (`list[float]`, optional): List of cut-off grades for `action="grade_tonnage_curve"`.
   * `x`, `y`, `z` (`float`, optional): World coordinates. Required for `action="query_xyz"`.
   * `variables` (`list[str]`, optional): Specific block variable names to retrieve in `query_xyz`.
   * `variable` (`str`, optional): Target numeric variable (e.g. `"CU"`, `"AU"`, `"DENS"`) for `action="stats"`.
@@ -103,8 +109,11 @@ The **Vulcan MCP** server exposes **9 Master Compound Tools** to Model Context P
 ### 3. `vulcan_triangulation` — 3D Surfaces & Solids (`.00t` / `.tri`)
 * **Purpose**: Query topographic surfaces, check solid closure and consistency, calculate volume, sample $Z$ elevations, and perform 3D point-in-solid checks.
 * **Parameters**:
-  * `action` (`str`, required): `"list"`, `"info"`, `"elevation"`, `"point_inside"`, `"load"`, `"unload"`.
+  * `action` (`str`, required): `"list"`, `"info"`, `"elevation"`, `"profile"`, `"cut_fill"`, `"point_inside"`, `"load"`, `"unload"`.
   * `name` (`str`, optional): Triangulation filename (e.g. `"topo.00t"`, `"orebody.00t"`).
+  * `target_name` (`str`, optional): Target/design triangulation filename for `action="cut_fill"`.
+  * `start`, `end` (`list[float]`, optional): 2D/3D start and end points for `action="profile"`.
+  * `step` (`float`, optional): Sampling step size for `profile` (default `5.0`) or grid cell size for `cut_fill` (default `10.0`).
   * `points` (`list[list[float]]`, optional): Coordinate points array:
     * For `action="elevation"`: `[[x1, y1], [x2, y2], ...]`.
     * For `action="point_inside"`: `[[x1, y1, z1], [x2, y2, z2], ...]`.
@@ -165,7 +174,8 @@ The **Vulcan MCP** server exposes **9 Master Compound Tools** to Model Context P
 ### 5. `vulcan_drillholes` — ISIS Drillhole Databases (`.dhd.isis`)
 * **Purpose**: Inspect drilling database structures, collars, surveys, assays, scan for high-grade intercepts, and render 3D desurveyed drill traces.
 * **Parameters**:
-  * `action` (`str`, required): `"list_dbs"`, `"schema"`, `"holes"`, `"hole"`, `"high_grade"`, `"display"`, `"clear_display"`.
+  * `action` (`str`, required): `"list_dbs"`, `"schema"`, `"holes"`, `"hole"`, `"high_grade"`, `"qaqc_validation"`, `"stats"`, `"display"`, `"clear_display"`.
+  * `min_valid`, `max_valid`, `tolerance` (`float`, optional): Range and overlap/gap tolerance parameters for `action="qaqc_validation"`.
   * `db` (`str`, optional): Drillhole database name (e.g. `"drilling.dhd.isis"`).
   * `hole` (`str`, optional): Single hole ID (e.g. `"DH_101"`).
   * `holes` (`list[str]`, optional): Array of hole IDs to display.
@@ -232,4 +242,14 @@ The **Vulcan MCP** server exposes **9 Master Compound Tools** to Model Context P
 | `ConnectionError` | The internal listener is not running inside Maptek Vulcan. | Start the listener inside Vulcan Desktop: `File > Python Script > vulcan_listener/server.py` (checking *"Run in shell window"*). |
 | `CommandTimeout` | Vulcan Desktop has a blocking modal dialog open on screen. | Advise the user to inspect Vulcan Desktop and click OK or Cancel to unblock the main thread. |
 | `ToolError` | Invalid parameter, missing mandatory argument, or Python syntax error in `vulcan_execute_code`. | Check tool parameters, ensure Python 3.5 syntax, and inspect the traceback returned in the error payload. |
-| `AuthenticationError` | Non-loopback binding without valid token or mismatched `VULCAN_MCP_TOKEN`. | Verify `VULCAN_MCP_TOKEN` matches across both the listener and the AI client environment. |
+| `AuthenticationError` | Non-loopback binding without valid token or mismatched `VULCAN_MCP_TOKEN`. | Run `uvx luiccian-vulcan-mcp --generate-token` or verify `VULCAN_MCP_TOKEN` matches across both the listener and the AI client environment. |
+
+---
+
+## PyPI Distribution & CLI Diagnostics (`uvx luiccian-vulcan-mcp`)
+
+- **Listener Bundle**: End users installing via `uvx luiccian-vulcan-mcp` download `vulcan_listener.zip` from GitHub Releases and launch `vulcan_listener/server.py` inside Maptek Vulcan 12 (`File > Python Script`).
+- **CLI Flags**:
+  - `uvx luiccian-vulcan-mcp --version`: Print MCP package version offline.
+  - `uvx luiccian-vulcan-mcp --check`: Run a live TCP health check (`system.ping`) comparing `mcp_version` vs. `listener_version`.
+  - `uvx luiccian-vulcan-mcp --generate-token`: Generate a shared 256-bit HMAC token in `~/.vulcan_mcp/token` read automatically by both processes.

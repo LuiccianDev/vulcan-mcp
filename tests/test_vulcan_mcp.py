@@ -456,3 +456,175 @@ def test_listener_and_client_connection_resilience(monkeypatch):
     monkeypatch.setattr(listener_server.socket, "socket", lambda *a, **kw: FakeListenSock())
     listener_server.serve_forever()
     assert calls["n"] == 2
+
+
+def test_cli_flags_and_auth_token(tmp_path, monkeypatch, capsys):
+    """Verify --version, --help, --generate-token, shared token parity, and --check health check."""
+    import json
+    import socket
+    import threading
+
+    import pytest
+    import server as listener_server
+
+    from vulcan_mcp import __version__, protocol
+    from vulcan_mcp.server import main as mcp_main
+
+    # Isolate home and env so ~/.vulcan_mcp/token is created inside tmp_path
+    monkeypatch.delenv("VULCAN_MCP_TOKEN", raising=False)
+    monkeypatch.setattr(listener_server, "TOKEN", "")
+    monkeypatch.setattr(protocol.Path, "home", staticmethod(lambda: tmp_path))
+    monkeypatch.setattr(
+        listener_server,
+        "_token_file_path",
+        lambda: str(tmp_path / ".vulcan_mcp" / "token"),
+    )
+
+    assert mcp_main(["--version"]) == 0
+    assert __version__ in capsys.readouterr().out
+
+    with pytest.raises(SystemExit) as exc_info:
+        mcp_main(["--help"])
+    assert exc_info.value.code == 0
+    help_out = capsys.readouterr().out
+    assert "--check" in help_out
+    assert "--generate-token" in help_out
+
+    assert mcp_main(["--generate-token"]) == 0
+    gen_out = capsys.readouterr().out
+    assert "VULCAN_MCP_TOKEN" in gen_out
+
+    mcp_token = protocol.get_auth_token()
+    listener_token = listener_server._get_expected_token()
+    assert mcp_token is not None
+    assert mcp_token == listener_token
+
+    # Environment variable overrides token file when set explicitly
+    monkeypatch.setenv("VULCAN_MCP_TOKEN", "env-override-token")
+    assert protocol.get_auth_token() == "env-override-token"
+    assert listener_server._get_expected_token() == "env-override-token"
+    monkeypatch.delenv("VULCAN_MCP_TOKEN")
+
+    # --check succeeds against live local socket using the shared token
+    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(2)
+    port = srv.getsockname()[1]
+
+    def _serve_one():
+        conn, _ = srv.accept()
+        listener_server.handle_client(conn, read_timeout=2.0)
+
+    t = threading.Thread(target=_serve_one, daemon=True)
+    t.start()
+
+    monkeypatch.setenv("VULCAN_MCP_HOST", "127.0.0.1")
+    monkeypatch.setenv("VULCAN_MCP_PORT", str(port))
+    capsys.readouterr()
+    assert mcp_main(["--check"]) == 0
+    raw_out = capsys.readouterr().out
+    check_payload = json.loads(raw_out[raw_out.index("{") :])
+    assert check_payload["ok"] is True
+    assert check_payload["token_configured"] is True
+    assert check_payload["listener_version"] == listener_server._listener_version()
+    assert "drillholes" in check_payload["domains"]
+    t.join(timeout=2.0)
+    srv.close()
+
+    # --check returns non-zero exit code when listener is unreachable
+    assert mcp_main(["--check"]) == 1
+
+
+def test_listener_reload_and_frame_limit():
+    """Verify system.reload hot-reloads handlers and wire.read_message rejects oversized headers."""
+    import pytest
+    import wire
+    from handlers import system as sys_handler
+
+    res = sys_handler.system({"action": "reload", "module": "system"})
+    assert res["reloaded"] == ["system"]
+    assert res["count"] == 1
+
+    class OversizedSock:
+        def recv(self, _n):
+            return wire.HEADER.pack(wire.MAX_MESSAGE_SIZE + 1)
+
+    with pytest.raises(ValueError, match="Incoming message too large"):
+        wire.read_message(OversizedSock())
+
+
+def test_drillhole_stats_and_triangulation_cut_fill(monkeypatch):
+    """Verify drillholes stats and triangulation cut_fill contracts with Pydantic validation."""
+    from handlers import drillholes, triangulations
+
+    from vulcan_mcp.models import CutFillResponse, DrillholeStatsResponse
+
+    class FakeStatsDB:
+        def __init__(self, rows):
+            self._rows = rows
+            self._idx = -1
+
+        def table_list(self):
+            return ["COLLARES", "LEYES"]
+
+        def field_list(self, table):
+            return ["HOLE_ID", "FROM", "TO", "CUT"]
+
+        def field_list_strings(self, table):
+            return ["HOLE_ID"]
+
+        def __iter__(self):
+            for i in range(len(self._rows)):
+                self._idx = i
+                yield self
+
+        def get_table_name(self):
+            return "LEYES"
+
+        def get(self, field):
+            return self._rows[self._idx][field]
+
+        def close(self):
+            pass
+
+    fake_db = FakeStatsDB(
+        [
+            {"FROM": 0.0, "TO": 2.0, "CUT": 1.0},
+            {"FROM": 2.0, "TO": 6.0, "CUT": 2.5},
+            {"FROM": 6.0, "TO": 8.0, "CUT": None},
+        ]
+    )
+    monkeypatch.setattr(drillholes, "_open", lambda params: fake_db)
+    stats_res = drillholes.drillholes({"action": "stats", "db": "test.dhd.isis", "field": "CUT"})
+    parsed_stats = DrillholeStatsResponse(status="success", **stats_res)
+    assert parsed_stats.valid_count == 2
+    assert parsed_stats.missing_count == 1
+    assert parsed_stats.mean == 1.75
+    assert parsed_stats.weighted_mean == 2.0
+    assert parsed_stats.total_length == 6.0
+
+    class FakeTri:
+        def __init__(self, z_val):
+            self._z = z_val
+
+        def extent(self):
+            return [[0.0, 0.0, 0.0], [20.0, 20.0, 100.0]]
+
+        def get_elevation(self, x, y):
+            return self._z
+
+    class FakeVulcan:
+        def triangulation(self, path):
+            return FakeTri(100.0) if "base" in path else FakeTri(95.0)
+
+    monkeypatch.setattr(triangulations, "resolve", lambda name, suffixes: name)
+    monkeypatch.setattr(triangulations, "vulcan", lambda: FakeVulcan())
+    cf_res = triangulations.triangulation(
+        {"action": "cut_fill", "name": "base.00t", "target_name": "pit.00t", "step": 10.0}
+    )
+    parsed_cf = CutFillResponse(status="success", **cf_res)
+    assert parsed_cf.sampled_cells == 4
+    assert parsed_cf.area_evaluated_m2 == 400.0
+    assert parsed_cf.cut_volume_m3 == 2000.0
+    assert parsed_cf.fill_volume_m3 == 0.0
+    assert parsed_cf.net_volume_m3 == -2000.0
