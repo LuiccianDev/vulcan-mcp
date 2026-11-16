@@ -182,3 +182,49 @@ async def test_tool_handles_server_error_envelope(mock_vulcan):
 
     with pytest.raises(ToolError, match="Block model file not found or corrupted"):
         await vulcan_block_model(action="info", model="non_existent.bmf")
+
+
+@pytest.mark.asyncio
+async def test_tool_drillholes_qaqc_validation(mock_vulcan):
+    mock_vulcan.register_handler(
+        "drillholes",
+        lambda params: {
+            "status": "success",
+            "db": params.get("db"),
+            "table": params.get("table") or "LEYES",
+            "field": params.get("field"),
+            "holes_checked": 2,
+            "intervals_checked": 10,
+            "total_anomalies": 2,
+            "summary": {"overlap": 1, "gap": 1, "inverted_interval": 0, "out_of_range": 0},
+            "anomalies": [
+                {
+                    "hole": "DH001",
+                    "issue_type": "overlap",
+                    "from_depth": 10.0,
+                    "to_depth": 12.0,
+                    "value": 0.45,
+                    "detail": "Overlap of 0.5000m with previous interval ending at 10.5000m",
+                },
+                {
+                    "hole": "DH002",
+                    "issue_type": "gap",
+                    "from_depth": 25.0,
+                    "to_depth": 27.0,
+                    "value": 0.30,
+                    "detail": "Sampling gap of 2.0000m after previous interval ending at 23.0000m",
+                },
+            ],
+        },
+    )
+    res = await vulcan_drillholes(
+        action="qaqc_validation",
+        db="exploration.dhd.isis",
+        table="LEYES",
+        field="CU",
+        min_valid=0.0,
+        max_valid=10.0,
+    )
+    assert res["total_anomalies"] == 2
+    assert res["summary"]["overlap"] == 1
+    assert res["summary"]["gap"] == 1
