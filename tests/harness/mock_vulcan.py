@@ -135,6 +135,42 @@ class MockVulcanServer:
                 "total_blocks": 480000,
                 "blocks_above_cutoff": 125400,
             }
+        elif action == "grade_tonnage_curve":
+            return {
+                "model_name": params.get("model", "deposit_block_model.bmf"),
+                "variable": params.get("variable", "CU"),
+                "density": float(params.get("density") or 2.7),
+                "total_blocks": 480000,
+                "total_volume": 12960000.0,
+                "total_tonnes": 34992000.0,
+                "overall_mean_grade": 0.78,
+                "intervals": [
+                    {
+                        "cutoff": 0.2,
+                        "blocks_above": 480000,
+                        "volume": 12960000.0,
+                        "tonnes": 34992000.0,
+                        "mean_grade": 0.78,
+                        "metal_content": 272937.6,
+                    },
+                    {
+                        "cutoff": 0.5,
+                        "blocks_above": 320000,
+                        "volume": 8640000.0,
+                        "tonnes": 23328000.0,
+                        "mean_grade": 1.05,
+                        "metal_content": 244944.0,
+                    },
+                    {
+                        "cutoff": 1.0,
+                        "blocks_above": 110000,
+                        "volume": 2970000.0,
+                        "tonnes": 8019000.0,
+                        "mean_grade": 1.62,
+                        "metal_content": 129907.8,
+                    },
+                ],
+            }
         return {"status": "ok"}
 
     def _default_triangulation(self, params: dict[str, Any]) -> dict[str, Any]:

@@ -127,7 +127,99 @@ def _summary(frame, variable, params):
     return out
 
 
-ACTIONS = {"list": list_models, "info": info, "query_xyz": query_xyz, "stats": stats}
+def grade_tonnage_curve(params):
+    variable = require(params, "variable")
+    density = float(params.get("density") or 2.7)
+    cutoffs_param = params.get("cutoffs")
+    if cutoffs_param is not None and isinstance(cutoffs_param, (list, tuple)):
+        cutoffs = [float(c) for c in cutoffs_param]
+    else:
+        cutoffs = None
+
+    bm = _open(params)
+    try:
+        if variable not in _fields(bm):
+            raise CommandError("Variable '{}' not in model. Available: {}".format(variable, ", ".join(_fields(bm))))
+        try:
+            frame = bm.get_pandas([variable, "xlength", "ylength", "zlength"], params.get("select") or "")
+        except ImportError:
+            raise CommandError("pandas is not available in Vulcan's Python")
+
+        try:
+            default = float(bm.field_default_string(variable))
+            frame = frame[frame[variable] != default]
+        except Exception:
+            default = None
+
+        frame = frame[frame[variable] >= 0.0]
+        frame = frame.assign(volume=frame["xlength"] * frame["ylength"] * frame["zlength"])
+        frame = frame.assign(tonnes=frame["volume"] * density)
+
+        if len(frame) == 0:
+            return {
+                "model_name": params["model"],
+                "variable": variable,
+                "density": density,
+                "total_blocks": 0,
+                "total_volume": 0.0,
+                "total_tonnes": 0.0,
+                "overall_mean_grade": 0.0,
+                "intervals": [],
+            }
+
+        total_blocks = int(len(frame))
+        total_volume = float(frame["volume"].sum())
+        total_tonnes = float(frame["tonnes"].sum())
+        total_metal = float((frame[variable] * frame["tonnes"]).sum())
+        overall_mean = (total_metal / total_tonnes) if total_tonnes > 0 else 0.0
+
+        if cutoffs is None:
+            min_grade = float(frame[variable].min())
+            max_grade = float(frame[variable].max())
+            step = (max_grade - min_grade) / 5.0 if max_grade > min_grade else 1.0
+            cutoffs = [round(min_grade + i * step, 4) for i in range(6)]
+
+        intervals = []
+        for cut in cutoffs:
+            sub = frame[frame[variable] >= cut]
+            if len(sub) == 0:
+                intervals.append({
+                    "cutoff": cut,
+                    "blocks_above": 0,
+                    "volume": 0.0,
+                    "tonnes": 0.0,
+                    "mean_grade": 0.0,
+                    "metal_content": 0.0,
+                })
+                continue
+            vol = float(sub["volume"].sum())
+            tons = float(sub["tonnes"].sum())
+            metal = float((sub[variable] * sub["tonnes"]).sum())
+            mean_g = (metal / tons) if tons > 0 else 0.0
+            intervals.append({
+                "cutoff": cut,
+                "blocks_above": int(len(sub)),
+                "volume": round(vol, 2),
+                "tonnes": round(tons, 2),
+                "mean_grade": round(mean_g, 4),
+                "metal_content": round(metal, 2),
+            })
+
+        return {
+            "model_name": params["model"],
+            "variable": variable,
+            "density": density,
+            "total_blocks": total_blocks,
+            "total_volume": round(total_volume, 2),
+            "total_tonnes": round(total_tonnes, 2),
+            "overall_mean_grade": round(overall_mean, 4),
+            "intervals": intervals,
+        }
+    finally:
+        bm.close()
+
+
+ACTIONS = {"list": list_models, "info": info, "query_xyz": query_xyz, "stats": stats, "grade_tonnage_curve": grade_tonnage_curve}
 
 
 @command("block_model", timeout=120)

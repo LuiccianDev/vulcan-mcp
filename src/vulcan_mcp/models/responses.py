@@ -31,6 +31,30 @@ class VulcanInventoryResponse(VulcanBaseResponse):
     grids: List[str] = Field(default_factory=list)
 
 
+class CutoffInterval(BaseModel):
+    """Cumulative grade-tonnage metrics above a specific cutoff."""
+
+    cutoff: float
+    blocks_above: int
+    volume: float
+    tonnes: float
+    mean_grade: float
+    metal_content: float
+
+
+class GradeTonnageResponse(VulcanBaseResponse):
+    """Response model for block model grade-tonnage curve evaluation."""
+
+    model_name: Optional[str] = None
+    variable: Optional[str] = None
+    density: Optional[float] = None
+    total_blocks: Optional[int] = None
+    total_volume: Optional[float] = None
+    total_tonnes: Optional[float] = None
+    overall_mean_grade: Optional[float] = None
+    intervals: List[CutoffInterval] = Field(default_factory=list)
+
+
 class BlockModelStatsResponse(VulcanBaseResponse):
     """Response model for block model summary and statistics."""
 
