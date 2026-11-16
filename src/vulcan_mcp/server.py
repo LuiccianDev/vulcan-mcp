@@ -50,7 +50,7 @@ async def vulcan_system(
     annotations=ToolAnnotations(read_only_hint=True),
 )
 async def vulcan_block_model(
-    action: Literal["list", "info", "query_xyz", "stats"],
+    action: Literal["list", "info", "query_xyz", "stats", "grade_tonnage_curve"],
     model: str | None = None,
     x: float | None = None,
     y: float | None = None,
@@ -58,6 +58,7 @@ async def vulcan_block_model(
     variables: list[str] | None = None,
     variable: str | None = None,
     cutoff: float | None = None,
+    cutoffs: list[float] | None = None,
     density: float | None = None,
     select: str | None = None,
 ) -> dict:
@@ -69,6 +70,8 @@ async def vulcan_block_model(
     - query_xyz: Read block grades/attributes at world coordinates (`model`, `x`, `y`, `z`, optional `variables`).
     - stats: Compute grade-tonnage statistics, volume-weighted mean, and cutoff summary (`model`, `variable`,
       optional `cutoff`, `density`, `select`).
+    - grade_tonnage_curve: Compute full cumulative grade-tonnage distribution across cutoff increments
+      (`model`, `variable`, optional `cutoffs`, `density`, `select`).
     """
     return await _send(
         "block_model",
@@ -81,6 +84,7 @@ async def vulcan_block_model(
             "variables": variables,
             "variable": variable,
             "cutoff": cutoff,
+            "cutoffs": cutoffs,
             "density": density,
             "select": select,
         },

@@ -60,6 +60,20 @@ async def test_tool_block_model(mock_vulcan):
     assert stats["variable"] == "CU"
     assert stats["mean"] == 0.78
 
+    # 5. grade_tonnage_curve
+    gt = await vulcan_block_model(
+        action="grade_tonnage_curve",
+        model="deposit_block_model.bmf",
+        variable="CU",
+        density=2.7,
+        cutoffs=[0.2, 0.5, 1.0],
+    )
+    assert gt["variable"] == "CU"
+    assert gt["total_blocks"] == 480000
+    assert len(gt["intervals"]) == 3
+    assert gt["intervals"][1]["cutoff"] == 0.5
+    assert gt["intervals"][1]["mean_grade"] == 1.05
+
 
 @pytest.mark.asyncio
 async def test_tool_triangulation(mock_vulcan):

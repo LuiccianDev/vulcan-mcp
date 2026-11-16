@@ -6,21 +6,40 @@ from .common import CommandError, command, require, run_action, vulcan_gui
 
 
 def _find_vulcan_bbox():
+    """Find Vulcan / Envisage window bounding box using ctypes (native Windows API)."""
     try:
-        import win32gui
-    except ImportError:
+        import ctypes
+        import ctypes.wintypes
+        user32 = ctypes.windll.user32
+    except Exception:
         return None
+
     matches = []
 
     def enum_cb(hwnd, _):
-        if win32gui.IsWindowVisible(hwnd):
-            title = win32gui.GetWindowText(hwnd) or ""
-            if "vulcan" in title.lower():
-                rect = win32gui.GetWindowRect(hwnd)
-                if (rect[2] - rect[0]) > 200 and (rect[3] - rect[1]) > 200:
-                    matches.append(rect)
+        if user32.IsWindowVisible(hwnd) and not user32.IsIconic(hwnd):
+            length = user32.GetWindowTextLengthW(hwnd)
+            if length > 0:
+                buff = ctypes.create_unicode_buffer(length + 1)
+                user32.GetWindowTextW(hwnd, buff, length + 1)
+                title = buff.value.lower()
+                # Match main Vulcan workspace or Envisage OpenGL window
+                if "vulcan" in title or "envisage" in title:
+                    rect = ctypes.wintypes.RECT()
+                    user32.GetWindowRect(hwnd, ctypes.byref(rect))
+                    width = rect.right - rect.left
+                    height = rect.bottom - rect.top
+                    # Filter out small toolbars or non-main dialogs
+                    if width > 400 and height > 300 and rect.left >= 0 and rect.top >= 0:
+                        matches.append((rect.left, rect.top, rect.right, rect.bottom))
+        return True
 
-    win32gui.EnumWindows(enum_cb, None)
+    try:
+        WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM)
+        user32.EnumWindows(WNDENUMPROC(enum_cb), 0)
+    except Exception:
+        return None
+
     return matches[0] if matches else None
 
 
