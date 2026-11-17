@@ -1,6 +1,7 @@
 """Models package for Vulcan MCP."""
 
 from vulcan_mcp.models.responses import (
+    ACTION_RESPONSE_MODELS,
     BlockModelStatsResponse,
     CanvasResponse,
     CutFillResponse,
@@ -13,15 +14,22 @@ from vulcan_mcp.models.responses import (
     ExecuteCodeResponse,
     GradeTonnageResponse,
     LegendResponse,
+    ListenerEnvelope,
     ProfilePoint,
     QAQCAnomaly,
+    ResponseStatus,
     TriangulationResponse,
     VulcanBaseResponse,
     VulcanInventoryResponse,
     VulcanPingResponse,
+    validate_action_response,
 )
 
 __all__ = [
+    "ACTION_RESPONSE_MODELS",
+    "ListenerEnvelope",
+    "ResponseStatus",
+    "validate_action_response",
     "VulcanBaseResponse",
     "VulcanPingResponse",
     "VulcanInventoryResponse",

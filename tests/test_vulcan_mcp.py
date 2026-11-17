@@ -466,7 +466,7 @@ def test_cli_flags_and_auth_token(tmp_path, monkeypatch, capsys):
     import server as listener_server
 
     from vulcan_mcp import __version__, protocol
-    from vulcan_mcp.server import main as mcp_main
+    from vulcan_mcp.cli import main as mcp_main
 
     # Isolate home and env so ~/.vulcan_mcp/token is created inside tmp_path
     monkeypatch.delenv("VULCAN_MCP_TOKEN", raising=False)

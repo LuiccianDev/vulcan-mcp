@@ -47,9 +47,9 @@ Issues = "https://github.com/LuiccianDev/vulcan-mcp/issues"
 Changelog = "https://github.com/LuiccianDev/vulcan-mcp/releases"
 
 [project.scripts]
-luiccian-vulcan-mcp = "vulcan_mcp.server:main"
-vulcan-mcp-server = "vulcan_mcp.server:main"
-vulcan-mcp = "vulcan_mcp.server:main"
+luiccian-vulcan-mcp = "vulcan_mcp.cli:main"
+vulcan-mcp-server = "vulcan_mcp.cli:main"
+vulcan-mcp = "vulcan_mcp.cli:main"
 
 [build-system]
 requires = ["hatchling"]

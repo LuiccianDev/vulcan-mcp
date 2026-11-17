@@ -1,22 +1,42 @@
 """Pydantic v2 data models for Vulcan MCP."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
+
+ResponseStatus = Literal["success", "error", "ok"]
+
+
+class ListenerEnvelope(BaseModel):
+    """TCP wire envelope returned by vulcan_listener/server.py."""
+
+    status: Literal["success", "error"]
+    result: Optional[Dict[str, Any]] = None
+    message: Optional[str] = None
+    traceback: Optional[str] = None
 
 
 class VulcanBaseResponse(BaseModel):
     """Base response model for Vulcan MCP tools."""
 
-    status: str = Field(default="ok", description="Status code ('ok' or 'error')")
+    status: ResponseStatus = Field(
+        default="success", description="Status code ('success', 'error', or 'ok')"
+    )
     error: Optional[str] = Field(default=None, description="Error message if status is 'error'")
 
 
 class VulcanPingResponse(VulcanBaseResponse):
     """Response model for system ping."""
 
-    message: Optional[str] = None
+    connected: bool = True
+    app: str = "Maptek Vulcan"
+    listener_version: Optional[str] = None
     protocol_version: Optional[int] = None
+    python: Optional[str] = None
+    vulcan_api: bool = False
+    project_dir: Optional[str] = None
+    domains: List[str] = Field(default_factory=list)
+    message: Optional[str] = None
     vulcan_version: Optional[str] = None
 
 
@@ -193,3 +213,26 @@ class ExecuteCodeResponse(VulcanBaseResponse):
     stdout: Optional[str] = None
     stderr: Optional[str] = None
     result: Optional[Any] = None
+
+
+ACTION_RESPONSE_MODELS: Dict[tuple[str, Optional[str]], type[VulcanBaseResponse]] = {
+    ("system", "ping"): VulcanPingResponse,
+    ("triangulation", "cut_fill"): CutFillResponse,
+    ("drillholes", "qaqc_validation"): DrillholeQAQCResponse,
+    ("drillholes", "stats"): DrillholeStatsResponse,
+}
+
+
+def validate_action_response(
+    command: str, action: Optional[str], payload: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Validate known domain/action payloads at the MCP boundary without leaking envelope keys."""
+    model_cls = ACTION_RESPONSE_MODELS.get((command, action))
+    if model_cls is None:
+        return payload
+    validated = model_cls.model_validate(payload)
+    dumped = validated.model_dump(exclude={"status", "error"})
+    for key, value in payload.items():
+        if key not in dumped:
+            dumped[key] = value
+    return dumped

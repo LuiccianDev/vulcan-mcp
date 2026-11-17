@@ -1,9 +1,6 @@
 """FastMCP Server for Maptek Vulcan 12 Desktop (Master Compound Tools Mode)."""
 
-import argparse
 import asyncio
-import json
-import sys
 from typing import Literal
 
 try:
@@ -15,16 +12,9 @@ except (ImportError, AttributeError):
 
 from mcp.types import ImageContent, ToolAnnotations
 
-from vulcan_mcp import __version__
 from vulcan_mcp.client import VulcanMCPClient
-from vulcan_mcp.protocol import (
-    TIMEOUT_DEFAULT,
-    TIMEOUT_LONG,
-    generate_and_save_token,
-    get_auth_token,
-    get_host,
-    get_port,
-)
+from vulcan_mcp.models.responses import validate_action_response
+from vulcan_mcp.protocol import TIMEOUT_DEFAULT, TIMEOUT_LONG
 
 mcp = FastMCP("Maptek Vulcan MCP")
 _client = VulcanMCPClient()
@@ -33,9 +23,10 @@ _client = VulcanMCPClient()
 async def _send(command: str, params: dict, timeout: float = TIMEOUT_DEFAULT) -> dict:
     clean = {k: v for k, v in params.items() if v is not None}
     try:
-        return await asyncio.to_thread(_client.send_command, command, clean, timeout)
+        raw = await asyncio.to_thread(_client.send_command, command, clean, timeout)
     except Exception as exc:
         raise ToolError(str(exc)) from exc
+    return validate_action_response(command, clean.get("action"), raw)
 
 
 @mcp.tool(
@@ -345,94 +336,10 @@ async def vulcan_execute_code(code: str) -> dict:
     return res
 
 
-def build_cli_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="luiccian-vulcan-mcp",
-        description="Model Context Protocol (MCP) server for Maptek Vulcan 12 Desktop.",
-    )
-    parser.add_argument(
-        "--version",
-        action="store_true",
-        help="Print the MCP server package version and exit.",
-    )
-    parser.add_argument(
-        "--check",
-        action="store_true",
-        help="Run a live TCP health check against the Maptek Vulcan listener and exit.",
-    )
-    parser.add_argument(
-        "--generate-token",
-        action="store_true",
-        help="Generate a shared HMAC auth token in ~/.vulcan_mcp/token and print client config.",
-    )
-    return parser
-
-
-def _run_health_check() -> int:
-    host = get_host()
-    port = get_port()
-    token_configured = bool(get_auth_token())
-    client = VulcanMCPClient(host=host, port=port, timeout=3.0, max_retries=0)
-    try:
-        ping_res = client.send_command("system", {"action": "ping"})
-    except Exception as exc:
-        print(
-            json.dumps(
-                {
-                    "ok": False,
-                    "mcp_version": __version__,
-                    "host": host,
-                    "port": port,
-                    "token_configured": token_configured,
-                    "error": str(exc),
-                },
-                indent=2,
-            ),
-            file=sys.stderr,
-        )
-        return 1
-
-    listener_ver = ping_res.get("listener_version")
-    report = {
-        "ok": True,
-        "mcp_version": __version__,
-        "listener_version": listener_ver,
-        "protocol_version": ping_res.get("protocol_version"),
-        "version_match": listener_ver == __version__ if listener_ver else None,
-        "host": host,
-        "port": port,
-        "token_configured": token_configured,
-        "vulcan_python": ping_res.get("python"),
-        "project_dir": ping_res.get("project_dir"),
-        "domains": ping_res.get("domains"),
-    }
-    print(json.dumps(report, indent=2))
-    if listener_ver and listener_ver != __version__:
-        print(
-            f"Warning: MCP version ({__version__}) != listener version ({listener_ver}).",
-            file=sys.stderr,
-        )
-    return 0
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = build_cli_parser()
-    args = parser.parse_args(argv)
-    if args.version:
-        print(f"luiccian-vulcan-mcp {__version__}")
-        return 0
-    if args.generate_token:
-        token, token_path = generate_and_save_token()
-        print(f"Generated shared HMAC token and saved to: {token_path}")
-        print(f"Token: {token}")
-        print("\nOptional explicit AI client env block:")
-        print(json.dumps({"env": {"VULCAN_MCP_TOKEN": token}}, indent=2))
-        return 0
-    if args.check:
-        return _run_health_check()
+def run_server() -> None:
+    """Start the FastMCP stdio server."""
     mcp.run()
-    return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    run_server()
