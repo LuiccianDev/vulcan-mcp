@@ -16,7 +16,7 @@ Refer to the master workspace rules in [AGENTS.md](./AGENTS.md).
 ## 3. Mining Data & Vulcan SDK
 - **Bilingual ISIS Databases**: Support both Spanish and English survey fields (`BUZ`/`DIP`, `BUZAMIENTO`, `FROM`/`DESDE`, `TO`/`HASTA`, `COLLARES`/`COLLARS`, `LEYES`/`ASSAYS`).
 - **3D Graphics Limit**: Always restrict temporary graphics segments (`vg.temp_object`) in Envisage to a safe limit ($\le 300$) to avoid graphics lag.
-- **Hot-Reload**: Handlers can be hot-reloaded dynamically using `execute_code` with `importlib.reload(module)` without restarting Vulcan.
+- **Hot-Reload**: Handlers can be hot-reloaded dynamically using `vulcan_system` (`action="reload"`) or `vulcan_execute_code` with `importlib.reload(module)` without restarting Vulcan.
 
 ## 4. Testing & Verification (3 Layers)
 - **Layer 1 (Unit & AST)**: `uv run --no-sync pytest tests/test_vulcan_mcp.py -v` (offline, validates Python 3.5 in vulcan_listener/)
@@ -29,7 +29,7 @@ Refer to the master workspace rules in [AGENTS.md](./AGENTS.md).
   - `uv run --no-sync pytest tests/test_vulcan_mcp.py tests/test_mcp_tools.py tests/test_agent_eval.py -v --cov=src/vulcan_mcp`
 
 ## 5. Graphify Knowledge Graph & Token-Saving Protocol
-- **Location**: `graphify-out/` (`graph.json`, `wiki/index.md`, `GRAPH_REPORT.md`).
+- **Location**: `graphify-out/` (`graph.json`, `wiki/index.md`, `GRAPH_REPORT.md`), queried via the global `graphify` plugin/MCP server.
 - **When to Use**: Query Graphify MCP tools (`query_graph`, `shortest_path`, `god_nodes`) or consult `graphify-out/wiki/index.md` before broad recursive searches.
 - **Maintenance**: Update deterministically via `uvx --from graphifyy graphify update .` after modifying code in `src/vulcan_mcp/` or `vulcan_listener/handlers/`.
 

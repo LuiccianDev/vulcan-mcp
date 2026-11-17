@@ -46,10 +46,10 @@ This repository implements the Model Context Protocol (MCP) to connect Maptek Vu
 - **Modal Dialogs**: If an MCP tool call halts on timeout, check whether Maptek Vulcan Desktop has an active popup dialog on screen (modal windows block Vulcan's Python thread until the user clicks OK or Cancel).
 - **3D Graphics Limit**: When displaying drillholes or temporary polylines (`vg.temp_object`), always restrict the quantity to a safe limit ($\le 300$ segments).
 - **Bilingual Drillhole Databases**: In ISIS databases (`.dhd.isis`), support both English and Spanish field names (`COLLARES/COLLARS`, `LEYES/ASSAYS`, `BUZ/DIP`, `BUZAMIENTO`, `FROM/DESDE`, `TO/HASTA`).
-- **Hot-Reload**: Modules in `vulcan_listener/handlers/` can be hot-reloaded inside Vulcan via `vulcan_execute_code` with `importlib.reload(module)`.
+- **Hot-Reload**: Modules in `vulcan_listener/handlers/` can be hot-reloaded inside Vulcan via `vulcan_system` (`action="reload"`) or `vulcan_execute_code` with `importlib.reload(module)`.
 
 ## 6. Graphify Knowledge Graph & Token-Saving Protocol
-The repository maintains a persistent knowledge graph in `graphify-out/` to enable rapid, token-efficient architectural navigation without broad file reading.
+The repository maintains a persistent knowledge graph in `graphify-out/` (queried via the global `graphify` plugin/MCP server) to enable rapid, token-efficient architectural navigation without broad file reading.
 
 ### Decision Matrix: When to Use Graphify vs. Standard Tools
 | Scenario / User Intent | Primary Action (Token-Efficient) | Avoid / Secondary |
@@ -60,7 +60,7 @@ The repository maintains a persistent knowledge graph in `graphify-out/` to enab
 | **Post-Edit Maintenance** (After adding/editing handlers in `vulcan_listener/` or tools in `src/`) | Run deterministic update: `uvx --from graphifyy graphify update .` (0 token cost). | Do NOT leave `graphify-out/` outdated. |
 
 ## 7. Git Commit & Release Protocol (No Silent Commits)
-- **Plugin Integration**: Managed via `.agents/plugins/git-release/`.
+- **Plugin Integration**: Managed via project-local `.agents/plugins/git-release/` (general workflow/review plugins are managed globally).
 - **Strict Prohibition**: The assistant MUST NEVER execute `git commit` silently without asking the user.
 - **Post-Task Confirmation**: After verifying changes and automated tests, the assistant must always ask:
   *"Would you like me to commit these changes now (`git commit -m '...'`) or keep working?"*

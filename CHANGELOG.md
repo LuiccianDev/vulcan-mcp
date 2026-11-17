@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `qaqc_validation` in `vulcan_drillholes` for bilingual `.dhd.isis` interval audits (overlaps, sampling gaps, inverted intervals, out-of-range grades) with `QAQCAnomaly` and `DrillholeQAQCResponse`.
 - **Typed Response Contracts & Tooling**:
   - Added Pydantic v2 response schemas in `src/vulcan_mcp/models/`.
-  - Established root `skills/` catalog and installed `pstack`, `thermos`, and `cursor-team-kit` plugins.
+  - Established root `skills/` catalog.
 
 ### Fixed
 - **Envisage Screenshot Cropping**: Window-bounded screenshot capture via `ctypes.windll.user32` in `vulcan_listener/handlers/canvas.py`.
