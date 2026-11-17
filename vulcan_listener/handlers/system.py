@@ -2,7 +2,14 @@
 import os
 import sys
 
-from .common import COMMANDS, CommandError, command, project_dir, run_action
+from .common import (
+    COMMANDS,
+    CommandError,
+    command,
+    get_listener_meta,
+    project_dir,
+    run_action,
+)
 
 CATEGORIES = [
     ("block_models", (".bmf",)),
@@ -23,31 +30,21 @@ def _has(module_name):
         return False
 
 
-RELOADABLE_MODULES = {
-    "block_models": "handlers.block_models",
-    "canvas": "handlers.canvas",
-    "code": "handlers.code",
-    "design": "handlers.design",
-    "drillholes": "handlers.drillholes",
-    "legends": "handlers.legends",
-    "system": "handlers.system",
-    "triangulations": "handlers.triangulations",
-}
-
-
-def _listener_meta():
-    try:
-        import __init__ as listener_pkg
-        return (
-            getattr(listener_pkg, "__version__", "0.4.0"),
-            getattr(listener_pkg, "PROTOCOL_VERSION", 1),
-        )
-    except Exception:
-        return ("0.4.0", 1)
+def _discover_handler_modules():
+    """Discover loaded handler modules from sys.modules without a hardcoded registry."""
+    prefix = "handlers."
+    modules = {}
+    for mod_name, mod in list(sys.modules.items()):
+        if not mod_name.startswith(prefix) or mod_name == "handlers.common" or mod is None:
+            continue
+        short_name = mod_name[len(prefix) :]
+        if "." not in short_name:
+            modules[short_name] = mod_name
+    return modules
 
 
 def ping(params):
-    version, protocol = _listener_meta()
+    version, protocol = get_listener_meta()
     return {
         "connected": True,
         "app": "Maptek Vulcan",
@@ -81,15 +78,16 @@ def capabilities(params):
 
 
 def reload_handlers(params):
+    available = _discover_handler_modules()
     target = params.get("module")
     if target is not None:
-        if target not in RELOADABLE_MODULES:
+        if target not in available:
             raise CommandError("Unknown handler module '{}'. Available: {}".format(
-                target, ", ".join(sorted(RELOADABLE_MODULES.keys()))
+                target, ", ".join(sorted(available.keys()))
             ))
         targets = [target]
     else:
-        targets = sorted(RELOADABLE_MODULES.keys())
+        targets = sorted(available.keys())
 
     try:
         import imp
@@ -100,7 +98,7 @@ def reload_handlers(params):
 
     reloaded = []
     for name in targets:
-        mod_name = RELOADABLE_MODULES[name]
+        mod_name = available[name]
         mod = sys.modules.get(mod_name)
         if mod is None:
             mod = __import__(mod_name, fromlist=["*"])

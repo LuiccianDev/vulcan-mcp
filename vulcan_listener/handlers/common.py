@@ -4,6 +4,14 @@ import os
 # name -> (function, default_timeout_seconds)
 COMMANDS = {}
 
+LISTENER_VERSION = "0.5.0"
+PROTOCOL_VERSION = 1
+
+
+def get_listener_meta():
+    """Return (listener_version, protocol_version) from a single source of truth."""
+    return (LISTENER_VERSION, PROTOCOL_VERSION)
+
 
 class CommandError(Exception):
     """An error meant for the caller: its message is returned verbatim."""
