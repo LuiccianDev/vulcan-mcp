@@ -12,8 +12,8 @@
   </p>
 
   <p align="center">
-    <img src="https://img.shields.io/badge/Tests-22_Passed_(100%25)-success.svg?style=flat-square&logo=pytest" alt="Tests" />
-    <img src="https://img.shields.io/badge/Coverage-88%25-brightgreen.svg?style=flat-square" alt="Coverage" />
+    <img src="https://img.shields.io/badge/Tests-31_Passed_(100%25)-success.svg?style=flat-square&logo=pytest" alt="Tests" />
+    <img src="https://img.shields.io/badge/Coverage-91%25-brightgreen.svg?style=flat-square" alt="Coverage" />
     <img src="https://img.shields.io/badge/Linter-Ruff_Passed-10B981.svg?style=flat-square&logo=ruff" alt="Ruff" />
     <img src="https://img.shields.io/badge/Types-Mypy_Strict-3B82F6.svg?style=flat-square&logo=mypy" alt="Mypy" />
     <img src="https://img.shields.io/badge/Platform-Windows_x64-0078D6.svg?style=flat-square&logo=windows" alt="Windows x64" />
@@ -36,7 +36,7 @@
 
 ---
 
-Connect **Vulcan 12 ** directly to Artificial Intelligence assistants (**Google Antigravity**, **Claude Desktop**, **Claude Code**, **Cursor**, **VS Code**) via the open **Model Context Protocol (MCP)** standard.
+Connect **Vulcan 12** directly to Artificial Intelligence assistants (**Google Antigravity**, **Claude Desktop**, **Claude Code**, **Cursor**, **VS Code**) via the open **Model Context Protocol (MCP)** standard.
 
 Seamlessly query block models (`.bmf`), audit 3D triangulations and solids (`.00t`), explore ISIS drillhole databases (`.dhd.isis`), interact with CAD design layers (`.dgd.isis`), inspect color legends (`.scd`), capture the Envisage 3D viewport, and execute native PyVulcan automation scripts using natural language.
 
@@ -202,11 +202,11 @@ See complete parameter specifications and JSON schemas in [`docs/MCP_TOOLS_REFER
 
 | # | MCP Tool | Mining Domain | Actions (`action=`) | Description |
 | :-: | :--- | :--- | :--- | :--- |
-| 1 | **`vulcan_system`** | System & Project | `ping`, `project_info`, `capabilities` | Connection health, complete active project file inventory, and available SDK modules. |
-| 2 | **`vulcan_block_model`** | Block Models (`.bmf`) | `list`, `info`, `query_xyz`, `stats` | Block model schema, $(X,Y,Z)$ point query, tonnage, volume, and volume-weighted mean grade with cutoffs. |
-| 3 | **`vulcan_triangulation`** | Triangulations (`.00t`/`.tri`) | `list`, `info`, `elevation`, `point_inside`, `load`, `unload` | Nodes, faces, volume, topological consistency, centroid, $Z$ elevation, and point-in-solid test. |
+| 1 | **`vulcan_system`** | System & Project | `ping`, `project_info`, `capabilities`, `reload` | Connection health, complete active project file inventory, available SDK modules, and handler hot-reload. |
+| 2 | **`vulcan_block_model`** | Block Models (`.bmf`) | `list`, `info`, `query_xyz`, `stats`, `grade_tonnage_curve` | Block model schema, $(X,Y,Z)$ point query, tonnage, volume, volume-weighted mean grade, and grade-tonnage curves. |
+| 3 | **`vulcan_triangulation`** | Triangulations (`.00t`/`.tri`) | `list`, `info`, `elevation`, `profile`, `cut_fill`, `point_inside`, `load`, `unload` | Nodes, faces, volume, topological consistency, centroid, $Z$ elevation, profiles, cut/fill volumes, and point-in-solid test. |
 | 4 | **`vulcan_design`** | 3D CAD Design (`.dgd.isis`) | `list_dbs`, `list_layers`, `layer_info`, `load_layer`, `clear_temp`, `create_polyline` | CAD layer inspection, planar area ($m^2$), centroid, 3D layer loading, and polyline creation. |
-| 5 | **`vulcan_drillholes`** | ISIS Drillholes (`.dhd.isis`) | `list_dbs`, `schema`, `holes`, `hole`, `high_grade`, `display`, `clear_display` | Drillhole database exploration, high-grade intercept search, and desurveyed 3D colored display. |
+| 5 | **`vulcan_drillholes`** | ISIS Drillholes (`.dhd.isis`) | `list_dbs`, `schema`, `holes`, `hole`, `high_grade`, `display`, `clear_display`, `qaqc_validation`, `stats` | Drillhole database exploration, high-grade intercept search, QA/QC audits, interval stats, and desurveyed 3D display. |
 | 6 | **`vulcan_legend`** | Legends (`.scd`) | `list`, `inspect`, `update`, `restore` | Color scheme inspection and interval color updates with automatic `.scd.bak` backup. |
 | 7 | **`vulcan_screenshot`** | Visual 3D Viewport | *(Direct: `max_width`, `quality`)* | Viewport screenshot of Envisage compressed as JPEG for multimodal vision analysis. |
 | 8 | **`vulcan_canvas`** | UI & Macros | `macro`, `report` | Envisage Workbench macro execution and writing messages to Vulcan's report window. |

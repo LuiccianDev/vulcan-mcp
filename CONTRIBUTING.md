@@ -170,13 +170,12 @@ python scripts/bump_version.py minor
 python scripts/bump_version.py 0.3.3
 ```
 
-The script automatically synchronizes all 6 metadata points in a single atomic pass:
+The script automatically synchronizes all 5 metadata points in a single atomic pass:
 1. `pyproject.toml` (`[project] version = "..."`)
 2. `src/vulcan_mcp/__init__.py` (`__version__ = "..."`)
-3. `.agents/plugins/vulcan-mcp/plugin.json` (`"version": "..."`)
-4. `uv.lock` (root package version updated)
-5. `tests/test_vulcan_mcp.py` (`assert pkg_version == "..."`)
-6. `CHANGELOG.md` (moves `[Unreleased]` into `[X.Y.Z] - YYYY-MM-DD` and creates a fresh empty `[Unreleased]` section).
+3. `uv.lock` (root package version updated)
+4. `tests/test_vulcan_mcp.py` (`assert pkg_version == "..."`)
+5. `CHANGELOG.md` (moves `[Unreleased]` into `[X.Y.Z] - YYYY-MM-DD` and creates a fresh empty `[Unreleased]` section).
 
 ### How to Cut a Release & Publish to PyPI
 

@@ -4,8 +4,8 @@
 Synchronizes version across:
   1. pyproject.toml ([project] version = "...")
   2. src/vulcan_mcp/__init__.py (__version__ = "...")
-  3. .agents/plugins/vulcan-mcp/plugin.json ("version": "...")
-  4. uv.lock (version = "..." for luiccian-vulcan-mcp)
+  3. uv.lock (version = "..." for luiccian-vulcan-mcp)
+  4. tests/test_vulcan_mcp.py (assert pkg_version == "...")
   5. CHANGELOG.md (converts ## [Unreleased] to ## [X.Y.Z] - YYYY-MM-DD)
 
 Usage:
