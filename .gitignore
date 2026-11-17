@@ -100,4 +100,5 @@ graphify-out/
 # AI Agent Local Scratchpads & Transcripts
 # ==============================================================================
 .gemini/
+.superpowers/
 scratch/
