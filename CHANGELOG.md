@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.1] - 2026-11-16
+### Fixed
+- **Triangulation `cut_fill` & `profile` Sentinel Filtering**: Extracted shared `_sample_elevation()` in `vulcan_listener/handlers/triangulations.py` to skip `None`, `NaN`, `Inf`, and Vulcan `-9999.0` no-data values instead of corrupting cut/fill volumes.
+- **Timeout & Tool Annotation Safety**: Set `timeout=TIMEOUT_LONG` on `vulcan_triangulation` for dense `cut_fill` grids and updated `vulcan_system` to `read_only_hint=False` because `reload` mutates live handlers.
+- **Metadata & Token Lookup Consolidation**: Centralized `get_listener_meta()` in `vulcan_listener/handlers/common.py`, replaced hardcoded `RELOADABLE_MODULES` with dynamic `sys.modules` discovery in `system.py`, and removed the stale module-level `TOKEN` snapshot in `vulcan_listener/server.py`.
+
+### Changed
+- **CLI & Boundary Architecture**: Extracted CLI flags (`build_cli_parser`, `run_health_check`, `main`) into `src/vulcan_mcp/cli.py` and `src/vulcan_mcp/__main__.py` with lazy FastMCP startup, and wired `validate_action_response` + `ListenerEnvelope` into `server._send()`.
+- **Drillholes Subpackage**: Split `vulcan_listener/handlers/drillholes.py` into `vulcan_listener/handlers/drillholes/` (`__init__.py`, `_isis.py`, `_display.py`, `_analytics.py`) with Python 3.5.2 compatibility and reload-safe `_ACTIVE_TEMP_OBJECTS`.
+
+
+---
+
 ## [0.5.0] - 2026-11-16
 ### Added
 - **CLI Diagnostics & Shared HMAC Token Auth**:

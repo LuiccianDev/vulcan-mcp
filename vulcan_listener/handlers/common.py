@@ -4,7 +4,7 @@ import os
 # name -> (function, default_timeout_seconds)
 COMMANDS = {}
 
-LISTENER_VERSION = "0.5.0"
+LISTENER_VERSION = "0.5.1"
 PROTOCOL_VERSION = 1
 
 
