@@ -40,7 +40,7 @@ async def _send(command: str, params: dict, timeout: float = TIMEOUT_DEFAULT) ->
 
 @mcp.tool(
     title="Vulcan System & Project Inventory",
-    annotations=ToolAnnotations(read_only_hint=True),
+    annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False, idempotent_hint=True),
 )
 async def vulcan_system(
     action: Literal["ping", "project_info", "capabilities", "reload"] = "project_info",
@@ -143,6 +143,7 @@ async def vulcan_triangulation(
             "end": end,
             "step": step,
         },
+        timeout=TIMEOUT_LONG,
     )
 
 

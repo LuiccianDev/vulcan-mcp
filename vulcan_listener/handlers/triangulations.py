@@ -1,4 +1,5 @@
 """Triangulation commands (.00t / .tri)."""
+import math
 import os
 
 from .common import CommandError, command, list_files, require, resolve, run_action, to_list, vulcan, vulcan_gui
@@ -68,8 +69,21 @@ def point_inside(params):
     }
 
 
+def _sample_elevation(tri, x, y):
+    """Sample surface Z at (x, y), returning None for missing, NaN/Inf, or Vulcan -9999.0 sentinels."""
+    try:
+        z = tri.get_elevation(x, y)
+    except Exception:
+        return None
+    if z is None:
+        return None
+    z_val = float(z)
+    if math.isnan(z_val) or math.isinf(z_val) or z_val <= -9999.0:
+        return None
+    return z_val
+
+
 def profile(params):
-    import math
     path = resolve(require(params, "name"), SUFFIXES)
     start_pt = require(params, "start")
     end_pt = require(params, "end")
@@ -91,14 +105,9 @@ def profile(params):
         sx = x1 + fraction * (x2 - x1)
         sy = y1 + fraction * (y2 - y1)
         station = fraction * total_length
-        try:
-            z = tri.get_elevation(sx, sy)
-            if z is not None and not math.isnan(z) and z > -9999.0:
-                elevations.append(z)
-            else:
-                z = None
-        except Exception:
-            z = None
+        z = _sample_elevation(tri, sx, sy)
+        if z is not None:
+            elevations.append(z)
         points.append({
             "station": round(station, 2),
             "x": round(sx, 3),
@@ -165,15 +174,12 @@ def cut_fill(params):
             y = min_y + (iy + 0.5) * step
             if y > max_y:
                 continue
-            try:
-                zb = base_tri.get_elevation(x, y)
-                zt = target_tri.get_elevation(x, y)
-            except Exception:
-                continue
+            zb = _sample_elevation(base_tri, x, y)
+            zt = _sample_elevation(target_tri, x, y)
             if zb is None or zt is None:
                 continue
             sampled += 1
-            diff = float(zt) - float(zb)
+            diff = zt - zb
             if diff < 0.0:
                 cut_vol += (-diff) * cell_area
             elif diff > 0.0:

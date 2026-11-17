@@ -17,7 +17,6 @@ from handlers.common import COMMANDS  # noqa: E402
 def _isolate_unit_test_token(monkeypatch):
     """Isolate unit tests from any VULCAN_MCP_TOKEN in os.environ unless explicitly tested."""
     monkeypatch.delenv("VULCAN_MCP_TOKEN", raising=False)
-    monkeypatch.setattr(listener_server, "TOKEN", "")
 
 
 def test_python35_compatibility_no_fstrings():
@@ -58,7 +57,7 @@ def test_system_ping_and_capabilities():
 
 
 def test_token_authentication(monkeypatch):
-    monkeypatch.setattr(listener_server, "TOKEN", "secret-mining-token")
+    monkeypatch.setenv("VULCAN_MCP_TOKEN", "secret-mining-token")
     bad = listener_server.dispatch({"type": "system", "params": {"action": "ping"}})
     assert bad["status"] == "error"
     assert "Authentication failed" in bad["message"]
@@ -117,7 +116,6 @@ def test_legend_parse_and_update(tmp_path, monkeypatch):
         encoding="latin1",
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(listener_server, "TOKEN", "")
 
     inspected = listener_server.dispatch(
         {"type": "legend", "params": {"action": "inspect", "scd": "test.scd"}}
@@ -472,7 +470,6 @@ def test_cli_flags_and_auth_token(tmp_path, monkeypatch, capsys):
 
     # Isolate home and env so ~/.vulcan_mcp/token is created inside tmp_path
     monkeypatch.delenv("VULCAN_MCP_TOKEN", raising=False)
-    monkeypatch.setattr(listener_server, "TOKEN", "")
     monkeypatch.setattr(protocol.Path, "home", staticmethod(lambda: tmp_path))
     monkeypatch.setattr(
         listener_server,
@@ -526,7 +523,9 @@ def test_cli_flags_and_auth_token(tmp_path, monkeypatch, capsys):
     check_payload = json.loads(raw_out[raw_out.index("{") :])
     assert check_payload["ok"] is True
     assert check_payload["token_configured"] is True
-    assert check_payload["listener_version"] == listener_server._listener_version()
+    from handlers.common import get_listener_meta
+
+    assert check_payload["listener_version"] == get_listener_meta()[0]
     assert "drillholes" in check_payload["domains"]
     t.join(timeout=2.0)
     srv.close()
@@ -628,3 +627,47 @@ def test_drillhole_stats_and_triangulation_cut_fill(monkeypatch):
     assert parsed_cf.cut_volume_m3 == 2000.0
     assert parsed_cf.fill_volume_m3 == 0.0
     assert parsed_cf.net_volume_m3 == -2000.0
+
+
+def test_triangulation_cut_fill_ignores_sentinels(monkeypatch):
+    """Verify cut_fill skips NaN, Inf, and Vulcan -9999.0 no-data cells."""
+    from handlers import triangulations
+
+    class SentinelTri:
+        def __init__(self, z_map):
+            self._z_map = z_map
+
+        def extent(self):
+            return [[0.0, 0.0, 0.0], [20.0, 20.0, 100.0]]
+
+        def get_elevation(self, x, y):
+            return self._z_map.get((round(x, 1), round(y, 1)), 100.0)
+
+    base_map = {
+        (5.0, 5.0): 100.0,
+        (5.0, 15.0): float("nan"),
+        (15.0, 5.0): -9999.0,
+        (15.0, 15.0): float("inf"),
+    }
+    target_map = {
+        (5.0, 5.0): 95.0,
+        (5.0, 15.0): 95.0,
+        (15.0, 5.0): 95.0,
+        (15.0, 15.0): 95.0,
+    }
+
+    class FakeVulcan:
+        def triangulation(self, path):
+            return SentinelTri(base_map if "base" in path else target_map)
+
+    monkeypatch.setattr(triangulations, "resolve", lambda name, suffixes: name)
+    monkeypatch.setattr(triangulations, "vulcan", lambda: FakeVulcan())
+
+    res = triangulations.triangulation(
+        {"action": "cut_fill", "name": "base.00t", "target_name": "pit.00t", "step": 10.0}
+    )
+    assert res["sampled_cells"] == 1
+    assert res["area_evaluated_m2"] == 100.0
+    assert res["cut_volume_m3"] == 500.0
+    assert res["fill_volume_m3"] == 0.0
+    assert res["net_volume_m3"] == -500.0

@@ -26,11 +26,10 @@ from handlers import (  # noqa: E402, F401
     system,
     triangulations,
 )
-from handlers.common import COMMANDS, CommandError  # noqa: E402
+from handlers.common import COMMANDS, CommandError, get_listener_meta  # noqa: E402
 
 HOST = os.environ.get("VULCAN_MCP_HOST", "127.0.0.1").strip() or "127.0.0.1"
 PORT = int(os.environ.get("VULCAN_MCP_PORT", "9877").strip() or "9877")
-TOKEN = os.environ.get("VULCAN_MCP_TOKEN", "").strip()
 CLIENT_READ_TIMEOUT = float(os.environ.get("VULCAN_MCP_CLIENT_TIMEOUT", "5.0").strip() or "5.0")
 LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
 
@@ -56,8 +55,6 @@ def _token_file_path():
 
 
 def _get_expected_token():
-    if TOKEN:
-        return TOKEN
     env_token = os.environ.get("VULCAN_MCP_TOKEN", "").strip()
     if env_token:
         return env_token
@@ -66,17 +63,9 @@ def _get_expected_token():
         if os.path.isfile(token_path):
             with open(token_path, "r") as fh:
                 return fh.read().strip()
-    except Exception:
+    except (OSError, IOError):
         pass
     return ""
-
-
-def _listener_version():
-    try:
-        import __init__ as listener_pkg
-        return getattr(listener_pkg, "__version__", "0.4.0")
-    except Exception:
-        return "0.4.0"
 
 
 def validate_binding_security(host=None, token=None):
@@ -169,7 +158,7 @@ def serve_forever():
     sock.listen(5)
     token_active = bool(_get_expected_token())
     log("=" * 62)
-    log("Vulcan MCP Listener v{} started on {}:{}".format(_listener_version(), HOST, PORT))
+    log("Vulcan MCP Listener v{} started on {}:{}".format(get_listener_meta()[0], HOST, PORT))
     log("Working directory: {}".format(os.getcwd()))
     log("Registered domains: {}".format(", ".join(sorted(COMMANDS))))
     if token_active:

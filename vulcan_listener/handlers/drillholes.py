@@ -477,6 +477,23 @@ def _scan_hole_qaqc(hole_id, intervals, field, min_valid, max_valid, tolerance):
     return anomalies
 
 
+def _prepare_interval_table(db, requested_table, field=None, require_from_to=True):
+    """Resolve interval table, validate optional numeric field, and pick FROM/TO columns."""
+    table = _resolve_interval_table(db, requested_table)
+    fields_of = _field_cache(db)
+    f_all, f_str = fields_of(table)
+    from_col = _pick_field(("FROM", "DESDE", "DEPTH_FROM"), f_all)
+    to_col = _pick_field(("TO", "HASTA", "DEPTH_TO"), f_all)
+    if require_from_to and (not from_col or not to_col):
+        raise CommandError("Table '{}' does not contain FROM/DESDE and TO/HASTA fields".format(table))
+    if field is not None:
+        if field not in f_all:
+            raise CommandError("Field '{}' not in table '{}'. Fields: {}".format(field, table, ", ".join(f_all)))
+        if field in f_str:
+            raise CommandError("Field '{}' in table '{}' is a string field, not numeric".format(field, table))
+    return table, from_col, to_col
+
+
 def qaqc_validation(params):
     """Validate drillhole interval table for overlaps, sampling gaps, inverted intervals, and out-of-range grades."""
     requested_table = params.get("table")
@@ -492,18 +509,7 @@ def qaqc_validation(params):
 
     db = _open(params)
     try:
-        table = _resolve_interval_table(db, requested_table)
-        fields_of = _field_cache(db)
-        f_all, f_str = fields_of(table)
-        from_col = _pick_field(("FROM", "DESDE", "DEPTH_FROM"), f_all)
-        to_col = _pick_field(("TO", "HASTA", "DEPTH_TO"), f_all)
-        if not from_col or not to_col:
-            raise CommandError("Table '{}' does not contain FROM/DESDE and TO/HASTA fields".format(table))
-        if field is not None:
-            if field not in f_all:
-                raise CommandError("Field '{}' not in table '{}'. Fields: {}".format(field, table, ", ".join(f_all)))
-            if field in f_str:
-                raise CommandError("Field '{}' in table '{}' is a string field, not numeric".format(field, table))
+        table, from_col, to_col = _prepare_interval_table(db, requested_table, field=field, require_from_to=True)
 
         by_hole = {}
         intervals_checked = 0
@@ -564,16 +570,7 @@ def stats(params):
     field = require(params, "field")
     db = _open(params)
     try:
-        table = _resolve_interval_table(db, params.get("table"))
-        fields_of = _field_cache(db)
-        f_all, f_str = fields_of(table)
-        if field not in f_all:
-            raise CommandError("Field '{}' not in table '{}'. Fields: {}".format(field, table, ", ".join(f_all)))
-        if field in f_str:
-            raise CommandError("Field '{}' in table '{}' is a string field, not numeric".format(field, table))
-
-        from_col = _pick_field(("FROM", "DESDE", "DEPTH_FROM"), f_all)
-        to_col = _pick_field(("TO", "HASTA", "DEPTH_TO"), f_all)
+        table, from_col, to_col = _prepare_interval_table(db, params.get("table"), field=field, require_from_to=False)
 
         values = []
         weighted_sum = 0.0
